@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import { LayoutDashboard, Ticket, LogOut, PlusCircle, User } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Header } from "@/components/layout/header"
+import { createClient } from "@/lib/supabase/client"
 
 export default function PortalLayout({
     children,
@@ -75,11 +76,17 @@ export default function PortalLayout({
                 </nav>
 
                 <div className="p-4 border-t border-zinc-800">
-                    {/* In a real app, this would trigger a signOut function */}
-                    <Link href="/login" className="flex items-center gap-3 px-4 py-3 hover:text-white transition-colors">
+                    <button
+                        onClick={async () => {
+                            const supabase = createClient()
+                            await supabase.auth.signOut()
+                            window.location.href = '/login'
+                        }}
+                        className="flex w-full items-center gap-3 px-4 py-3 hover:text-white transition-colors"
+                    >
                         <LogOut className="w-5 h-5" />
                         <span className="font-medium text-sm uppercase tracking-wide">Sair</span>
-                    </Link>
+                    </button>
                 </div>
             </aside>
 

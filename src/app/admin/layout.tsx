@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import { LayoutDashboard, Ticket, Users, LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Header } from "@/components/layout/header"
+import { createClient } from "@/lib/supabase/client"
 
 export default function AdminLayout({
     children,
@@ -71,10 +72,17 @@ export default function AdminLayout({
                 </nav>
 
                 <div className="p-4 border-t border-zinc-800">
-                    <Link href="/login" className="flex items-center gap-3 px-4 py-3 hover:text-white transition-colors">
+                    <button
+                        onClick={async () => {
+                            const supabase = createClient()
+                            await supabase.auth.signOut()
+                            window.location.href = '/login'
+                        }}
+                        className="flex w-full items-center gap-3 px-4 py-3 hover:text-white transition-colors"
+                    >
                         <LogOut className="w-5 h-5" />
                         <span className="font-medium text-sm uppercase tracking-wide">Sair</span>
-                    </Link>
+                    </button>
                 </div>
             </aside>
 
