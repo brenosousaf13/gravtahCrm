@@ -44,6 +44,7 @@ export function TicketsDataTable({ tickets }: TicketsDataTableProps) {
     const router = useRouter()
     const [search, setSearch] = useState("")
     const [statusFilter, setStatusFilter] = useState("all")
+    const [brandFilter, setBrandFilter] = useState("all")
     const [currentPage, setCurrentPage] = useState(1)
     const itemsPerPage = 10
 
@@ -58,8 +59,9 @@ export function TicketsDataTable({ tickets }: TicketsDataTableProps) {
             (ticket.profiles?.email && ticket.profiles.email.toLowerCase().includes(search.toLowerCase()))
 
         const matchesStatus = statusFilter === "all" || ticket.status === statusFilter
+        const matchesBrand = brandFilter === "all" || (ticket.brand && ticket.brand === brandFilter)
 
-        return matchesSearch && matchesStatus
+        return matchesSearch && matchesStatus && matchesBrand
     })
 
     // Pagination Logic
@@ -77,6 +79,14 @@ export function TicketsDataTable({ tickets }: TicketsDataTableProps) {
         setCurrentPage(1) // Reset to first page
     }
 
+    const handleBrandChange = (value: string) => {
+        setBrandFilter(value)
+        setCurrentPage(1) // Reset to first page
+    }
+
+    // Unique Brands for Filter
+    const brands = Array.from(new Set(tickets.map(t => t.brand).filter(Boolean))).sort()
+
     return (
         <div className="space-y-4">
             {/* Toolbar */}
@@ -90,20 +100,36 @@ export function TicketsDataTable({ tickets }: TicketsDataTableProps) {
                         className="pl-8"
                     />
                 </div>
-                <Select value={statusFilter} onValueChange={handleStatusChange}>
-                    <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Filtrar Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Todos os Status</SelectItem>
-                        <SelectItem value="novo">Novos</SelectItem>
-                        <SelectItem value="em_analise">Em Análise</SelectItem>
-                        <SelectItem value="aguardando_resposta">Aguardando Resp.</SelectItem>
-                        <SelectItem value="aprovado">Aprovados</SelectItem>
-                        <SelectItem value="negado">Negados</SelectItem>
-                        <SelectItem value="finalizado">Finalizados</SelectItem>
-                    </SelectContent>
-                </Select>
+
+                <div className="flex gap-2 flex-col md:flex-row">
+                    <Select value={brandFilter} onValueChange={handleBrandChange}>
+                        <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Filtrar Marca" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Todas as Marcas</SelectItem>
+                            {brands.map(brand => (
+                                <SelectItem key={brand} value={brand}>{brand}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+
+                    <Select value={statusFilter} onValueChange={handleStatusChange}>
+                        <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Filtrar Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Todos os Status</SelectItem>
+                            <SelectItem value="novo">Novos</SelectItem>
+                            <SelectItem value="em_analise">Em Análise</SelectItem>
+                            <SelectItem value="aguardando_resposta">Aguardando Resp.</SelectItem>
+                            <SelectItem value="aguardando_fabrica">Aguardando Fábrica</SelectItem>
+                            <SelectItem value="aprovado">Aprovados</SelectItem>
+                            <SelectItem value="negado">Negados</SelectItem>
+                            <SelectItem value="finalizado">Finalizados</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
 
             {/* Table */}
