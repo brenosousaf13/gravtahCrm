@@ -54,58 +54,52 @@ export function TicketActions({ ticketId, currentStatus, currentSolution }: Tick
     }
 
     return (
-        <Card className="border-l-4 border-l-zinc-900">
-            <CardHeader>
-                <CardTitle className="text-sm uppercase tracking-wider text-zinc-500">
-                    Controles do Admin
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="space-y-2">
-                    <Label>Alterar Status</Label>
-                    <Select value={status} onValueChange={setStatus}>
+        <div className="space-y-4">
+            <div className="space-y-2">
+                <Label className="uppercase text-xs font-bold text-zinc-500">Alterar Status</Label>
+                <Select value={status} onValueChange={setStatus}>
+                    <SelectTrigger className="bg-white">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="novo">Novo</SelectItem>
+                        <SelectItem value="aguardando_resposta">Aguardando Resposta</SelectItem>
+                        <SelectItem value="aguardando_envio">Aguardando Envio</SelectItem>
+                        <SelectItem value="em_analise">Em Análise</SelectItem>
+                        <SelectItem value="aprovado">Aprovado</SelectItem>
+                        <SelectItem value="negado">Negado</SelectItem>
+                        <SelectItem value="finalizado">Finalizado</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+
+            {/* Show Solution Select only if relevant statuses */}
+            {['aprovado', 'finalizado', 'negado'].includes(status) && (
+                <div className="space-y-2 animate-in fade-in slide-in-from-top-1">
+                    <Label className="uppercase text-xs font-bold text-zinc-500">Definir Solução</Label>
+                    <Select value={solution} onValueChange={setSolution}>
                         <SelectTrigger className="bg-white">
-                            <SelectValue />
+                            <SelectValue placeholder="Selecione..." />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="novo">Novo</SelectItem>
-                            <SelectItem value="aguardando_resposta">Aguardando Resposta</SelectItem>
-                            <SelectItem value="aguardando_envio">Aguardando Envio</SelectItem>
-                            <SelectItem value="em_analise">Em Análise</SelectItem>
-                            <SelectItem value="aprovado">Aprovado</SelectItem>
+                            <SelectItem value="credito">Crédito</SelectItem>
+                            <SelectItem value="produto_trocado">Produto Trocado</SelectItem>
+                            <SelectItem value="produto_reparado">Produto Reparado</SelectItem>
+                            <SelectItem value="devolvido_cliente">Devolvido ao Cliente</SelectItem>
+                            <SelectItem value="envio_pecas">Envio de Peças Sobressalentes</SelectItem>
                             <SelectItem value="negado">Negado</SelectItem>
-                            <SelectItem value="finalizado">Finalizado</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
+            )}
 
-                {/* Show Solution Select only if relevant statuses */}
-                {['aprovado', 'finalizado', 'negado'].includes(status) && (
-                    <div className="space-y-2 animate-in fade-in slide-in-from-top-1">
-                        <Label>Definir Solução</Label>
-                        <Select value={solution} onValueChange={setSolution}>
-                            <SelectTrigger className="bg-white">
-                                <SelectValue placeholder="Selecione..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="troca">Troca</SelectItem>
-                                <SelectItem value="reparo">Reparo</SelectItem>
-                                <SelectItem value="credito">Crédito</SelectItem>
-                                <SelectItem value="reembolso">Reembolso</SelectItem>
-                                <SelectItem value="negado_justificado">Negado (Justificado)</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                )}
-
-                <Button
-                    className="w-full mt-2"
-                    onClick={handleUpdate}
-                    disabled={loading || (status === currentStatus && solution === currentSolution)}
-                >
-                    {loading ? "Salvando..." : "Salvar Alterações"}
-                </Button>
-            </CardContent>
-        </Card>
+            <Button
+                className="w-full mt-2"
+                onClick={handleUpdate}
+                disabled={loading || (status === currentStatus && solution === currentSolution)}
+            >
+                {loading ? "Salvando..." : "Salvar Alterações"}
+            </Button>
+        </div>
     )
 }

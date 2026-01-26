@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { notFound, redirect } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { TicketChat } from "@/components/ticket/ticket-chat"
-import { TicketStatusSelector } from "@/components/ticket/ticket-status-selector"
+import { TicketActions } from "@/components/ticket-actions"
 import { FileText, ArrowLeft, Box, User, Calendar, AlertTriangle } from "lucide-react"
 import Link from "next/link"
 
@@ -128,7 +128,11 @@ export default async function AdminTicketPage(props: PageProps) {
                         <div className="flex items-center gap-2 text-xs font-bold text-zinc-400 uppercase tracking-wider">
                             Controles
                         </div>
-                        <TicketStatusSelector ticketId={ticket.id} currentStatus={ticket.status} />
+                        <TicketActions
+                            ticketId={ticket.id}
+                            currentStatus={ticket.status}
+                            currentSolution={ticket.solution}
+                        />
                     </div>
 
                     <div className="h-px bg-zinc-200 w-full" />
