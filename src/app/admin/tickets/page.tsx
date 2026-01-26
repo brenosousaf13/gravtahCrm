@@ -11,6 +11,7 @@ export default async function AdminTicketsPage() {
         .from("tickets")
         .select(`
             *,
+            ticket_attachments(*),
             profiles (
                 full_name,
                 email,

@@ -21,7 +21,7 @@ export default async function AdminDashboard() {
     // FETCH ALL DATA (Optimize later if needed, good for MVP < 1000 records)
     const { data: allTickets, error } = await supabase
         .from("tickets")
-        .select("*, profiles(full_name, email, document)")
+        .select("*, ticket_attachments(*), profiles(full_name, email, document)")
         .order("created_at", { ascending: false })
 
     if (error) {

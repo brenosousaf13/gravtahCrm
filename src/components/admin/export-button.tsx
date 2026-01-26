@@ -31,26 +31,37 @@ export function ExportButton({ tickets }: ExportButtonProps) {
                 "Data Fabricação",
                 "Status",
                 "Solução",
-                "Data Fechamento"
+                "Data Fechamento",
+                "Anexos (Links)"
             ]
 
             // Map Data
-            const rows = tickets.map(t => [
-                t.id,
-                t.ticket_number,
-                new Date(t.created_at).toLocaleString('pt-BR'),
-                t.profiles?.full_name || "N/A",
-                t.profiles?.email || "N/A",
-                t.profiles?.document || "N/A",
-                t.brand,
-                t.model,
-                t.product_name,
-                t.batch_number || "",
-                t.manufacturing_date || "",
-                t.status,
-                t.solution || "",
-                t.closed_at ? new Date(t.closed_at).toLocaleString('pt-BR') : ""
-            ])
+            const rows = tickets.map(t => {
+                // Generate Attachment Links
+                const attachmentLinks = t.ticket_attachments && t.ticket_attachments.length > 0
+                    ? t.ticket_attachments.map((file: any) =>
+                        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/warranty-files/${file.file_url}`
+                    ).join(" | ")
+                    : "Sem anexos"
+
+                return [
+                    t.id,
+                    t.ticket_number,
+                    new Date(t.created_at).toLocaleString('pt-BR'),
+                    t.profiles?.full_name || "N/A",
+                    t.profiles?.email || "N/A",
+                    t.profiles?.document || "N/A",
+                    t.brand,
+                    t.model,
+                    t.product_name,
+                    t.batch_number || "",
+                    t.manufacturing_date || "",
+                    t.status,
+                    t.solution || "",
+                    t.closed_at ? new Date(t.closed_at).toLocaleString('pt-BR') : "",
+                    attachmentLinks
+                ]
+            })
 
             // Convert to CSV String with Semicolon separator (Excel friendly in BR/EU)
             const csvContent = [
