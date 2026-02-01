@@ -34,11 +34,17 @@ export async function updateSession(request: NextRequest) {
     } = await supabase.auth.getUser()
 
     // Protected routes
-    if (
-        !user &&
-        !request.nextUrl.pathname.startsWith('/login')
-    ) {
-        if (request.nextUrl.pathname.startsWith('/admin') || request.nextUrl.pathname.startsWith('/portal')) {
+    // Protected routes
+    if (!user) {
+        const path = request.nextUrl.pathname
+        // Allow access to login, register, auth endpoints, and static assets/images
+        if (
+            !path.startsWith('/login') &&
+            !path.startsWith('/register') &&
+            !path.startsWith('/auth') &&
+            !path.startsWith('/_next') &&
+            !path.includes('.') // trivial check for likely static files (favicon.ico, etc)
+        ) {
             const url = request.nextUrl.clone()
             url.pathname = '/login'
             return NextResponse.redirect(url)

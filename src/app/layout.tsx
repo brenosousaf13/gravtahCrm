@@ -9,6 +9,7 @@ const interTight = Inter_Tight({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://crm.gravtah.com.br'),
   title: "Gravtah - Warranty Portal",
   description: "Official Warranty Portal for Gravtah",
 };
