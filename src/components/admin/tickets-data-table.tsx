@@ -20,8 +20,18 @@ import {
 } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
 import Link from "next/link"
-import { Eye, Search, ChevronLeft, ChevronRight } from "lucide-react"
+import { Eye, Search, ChevronLeft, ChevronRight, Trash2 } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
+import { toast } from "sonner"
 
 interface Ticket {
     id: string
@@ -46,6 +56,8 @@ export function TicketsDataTable({ tickets }: TicketsDataTableProps) {
     const [statusFilter, setStatusFilter] = useState("all")
     const [brandFilter, setBrandFilter] = useState("all")
     const [currentPage, setCurrentPage] = useState(1)
+    const [ticketToDelete, setTicketToDelete] = useState<Ticket | null>(null)
+    const [isDeleting, setIsDeleting] = useState(false)
     const itemsPerPage = 10
 
     // Filter Logic
@@ -82,6 +94,31 @@ export function TicketsDataTable({ tickets }: TicketsDataTableProps) {
     const handleBrandChange = (value: string) => {
         setBrandFilter(value)
         setCurrentPage(1) // Reset to first page
+    }
+
+    const handleDeleteTicket = async () => {
+        if (!ticketToDelete) return
+
+        setIsDeleting(true)
+        const supabase = createClient()
+
+        try {
+            const { error } = await supabase
+                .from("tickets")
+                .delete()
+                .eq("id", ticketToDelete.id)
+
+            if (error) throw error
+
+            toast.success("Ticket excluído com sucesso")
+            router.refresh()
+            setTicketToDelete(null)
+        } catch (error) {
+            console.error("Error deleting ticket:", error)
+            toast.error("Erro ao excluir ticket")
+        } finally {
+            setIsDeleting(false)
+        }
     }
 
     // Unique Brands for Filter
@@ -183,10 +220,26 @@ export function TicketsDataTable({ tickets }: TicketsDataTableProps) {
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                            <Eye className="h-4 w-4 text-zinc-500" />
-                                            <span className="sr-only">Ver detalhes</span>
-                                        </Button>
+                                        <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-8 w-8 p-0"
+                                                onClick={() => router.push(`/admin/tickets/${ticket.id}`)}
+                                            >
+                                                <Eye className="h-4 w-4 text-zinc-500" />
+                                                <span className="sr-only">Ver detalhes</span>
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-500"
+                                                onClick={() => setTicketToDelete(ticket)}
+                                            >
+                                                <Trash2 className="h-4 w-4 text-zinc-500 hover:text-red-500" />
+                                                <span className="sr-only">Excluir ticket</span>
+                                            </Button>
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))
@@ -226,6 +279,33 @@ export function TicketsDataTable({ tickets }: TicketsDataTableProps) {
                     </div>
                 </div>
             )}
+
+            <Dialog open={!!ticketToDelete} onOpenChange={(open) => !open && setTicketToDelete(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Confirmar exclusão</DialogTitle>
+                        <DialogDescription>
+                            Tem certeza que deseja excluir o ticket #{ticketToDelete?.ticket_number}? Esta ação não pode ser desfeita.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setTicketToDelete(null)}
+                            disabled={isDeleting}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={handleDeleteTicket}
+                            disabled={isDeleting}
+                        >
+                            {isDeleting ? "Excluindo..." : "Excluir"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }
