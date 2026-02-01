@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import {
     Table,
     TableBody,
@@ -13,9 +14,11 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
-import { Search } from "lucide-react"
+import { Search, Pencil } from "lucide-react"
+import { EditCustomerDialog } from "./edit-customer-dialog"
 
 interface Profile {
     id: string
@@ -25,6 +28,7 @@ interface Profile {
     document: string | null
     avatar_url: string | null
     created_at: string
+    role?: string
 }
 
 interface CustomersDataTableProps {
@@ -33,7 +37,10 @@ interface CustomersDataTableProps {
 }
 
 export function CustomersDataTable({ profiles, ticketCounts }: CustomersDataTableProps) {
+    const router = useRouter()
     const [search, setSearch] = useState("")
+    const [selectedCustomer, setSelectedCustomer] = useState<Profile | null>(null)
+    const [isEditOpen, setIsEditOpen] = useState(false)
 
     const filteredProfiles = profiles.filter((profile) => {
         const term = search.toLowerCase()
@@ -43,6 +50,15 @@ export function CustomersDataTable({ profiles, ticketCounts }: CustomersDataTabl
             (profile.document && profile.document.includes(term))
         )
     })
+
+    const handleEditClick = (profile: Profile) => {
+        setSelectedCustomer(profile)
+        setIsEditOpen(true)
+    }
+
+    const handleEditSuccess = () => {
+        router.refresh()
+    }
 
     return (
         <Card>
@@ -67,12 +83,13 @@ export function CustomersDataTable({ profiles, ticketCounts }: CustomersDataTabl
                             <TableHead>Documento</TableHead>
                             <TableHead className="text-center">Tickets</TableHead>
                             <TableHead>Data Cadastro</TableHead>
+                            <TableHead className="text-right">Ações</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {filteredProfiles.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={5} className="h-24 text-center text-zinc-500">
+                                <TableCell colSpan={6} className="h-24 text-center text-zinc-500">
                                     Nenhum cliente encontrado.
                                 </TableCell>
                             </TableRow>
@@ -122,6 +139,17 @@ export function CustomersDataTable({ profiles, ticketCounts }: CustomersDataTabl
                                                 : "-"
                                             }
                                         </TableCell>
+                                        <TableCell className="text-right">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-8 w-8 p-0"
+                                                onClick={() => handleEditClick(profile)}
+                                            >
+                                                <Pencil className="h-4 w-4 text-zinc-500" />
+                                                <span className="sr-only">Editar</span>
+                                            </Button>
+                                        </TableCell>
                                     </TableRow>
                                 )
                             })
@@ -129,6 +157,15 @@ export function CustomersDataTable({ profiles, ticketCounts }: CustomersDataTabl
                     </TableBody>
                 </Table>
             </CardContent>
+
+            {selectedCustomer && (
+                <EditCustomerDialog
+                    open={isEditOpen}
+                    onOpenChange={setIsEditOpen}
+                    customer={selectedCustomer}
+                    onSuccess={handleEditSuccess}
+                />
+            )}
         </Card>
     )
 }
