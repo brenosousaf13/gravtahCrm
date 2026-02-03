@@ -29,9 +29,10 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog"
 import Link from "next/link"
-import { Eye, Search, ChevronLeft, ChevronRight, Trash2 } from "lucide-react"
+import { Eye, Search, ChevronLeft, ChevronRight, Trash2, Pencil } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
+import { EditTicketDialog } from "./edit-ticket-dialog"
 
 interface Ticket {
     id: string
@@ -40,6 +41,11 @@ interface Ticket {
     status: string
     product_name: string
     brand: string
+    model: string
+    sku: string | null
+    batch_number: string | null
+    manufacturing_date: string | null
+    issue_description: string
     profiles: {
         full_name: string | null
         email: string | null
@@ -56,8 +62,15 @@ export function TicketsDataTable({ tickets }: TicketsDataTableProps) {
     const [statusFilter, setStatusFilter] = useState("all")
     const [brandFilter, setBrandFilter] = useState("all")
     const [currentPage, setCurrentPage] = useState(1)
+
+    // DELETE STATE
     const [ticketToDelete, setTicketToDelete] = useState<Ticket | null>(null)
     const [isDeleting, setIsDeleting] = useState(false)
+
+    // EDIT STATE
+    const [ticketToEdit, setTicketToEdit] = useState<Ticket | null>(null)
+    const [isEditOpen, setIsEditOpen] = useState(false)
+
     const itemsPerPage = 10
 
     // Filter Logic
@@ -119,6 +132,11 @@ export function TicketsDataTable({ tickets }: TicketsDataTableProps) {
         } finally {
             setIsDeleting(false)
         }
+    }
+
+    const handleEditClick = (ticket: Ticket) => {
+        setTicketToEdit(ticket)
+        setIsEditOpen(true)
     }
 
     // Unique Brands for Filter
@@ -230,6 +248,17 @@ export function TicketsDataTable({ tickets }: TicketsDataTableProps) {
                                                 <Eye className="h-4 w-4 text-zinc-500" />
                                                 <span className="sr-only">Ver detalhes</span>
                                             </Button>
+
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-8 w-8 p-0"
+                                                onClick={() => handleEditClick(ticket)}
+                                            >
+                                                <Pencil className="h-4 w-4 text-zinc-500" />
+                                                <span className="sr-only">Editar ticket</span>
+                                            </Button>
+
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
@@ -306,6 +335,15 @@ export function TicketsDataTable({ tickets }: TicketsDataTableProps) {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {ticketToEdit && (
+                <EditTicketDialog
+                    open={isEditOpen}
+                    onOpenChange={setIsEditOpen}
+                    ticket={ticketToEdit}
+                    onSuccess={() => router.refresh()}
+                />
+            )}
         </div>
     )
 }
