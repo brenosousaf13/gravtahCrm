@@ -150,6 +150,9 @@ export function EditTicketDialog({
                                                 <SelectItem value="Corima">Corima</SelectItem>
                                                 <SelectItem value="Scicon">Scicon</SelectItem>
                                                 <SelectItem value="Fulcrum">Fulcrum</SelectItem>
+                                                <SelectItem value="Velotoze">Velotoze</SelectItem>
+                                                <SelectItem value="Supacaz">Supacaz</SelectItem>
+                                                <SelectItem value="Wahoo">Wahoo</SelectItem>
                                                 <SelectItem value="Outros">Outros</SelectItem>
                                             </SelectContent>
                                         </Select>

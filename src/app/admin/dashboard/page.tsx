@@ -76,7 +76,40 @@ export default async function AdminDashboard() {
     const statusDistribution = Object.entries(statusCount).map(([name, value]) => ({ name, value }))
 
 
-    // Recent for Table
+    // 4. Top Defective Brands
+    const brandCount: Record<string, number> = {}
+    tickets.forEach(t => {
+        const key = t.brand || "Desconhecido"
+        brandCount[key] = (brandCount[key] || 0) + 1
+    })
+
+    const topBrands = Object.entries(brandCount)
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5)
+
+    // 5. Status Distribution Output
+    // (Already calculated as statusDistribution)
+
+    // 5. Daily Volume (Last 7 Days)
+    const dailyVolume: { date: string; count: number }[] = []
+    const today = new Date()
+    for (let i = 6; i >= 0; i--) {
+        const date = new Date(today)
+        date.setDate(date.getDate() - i)
+
+        // Normalize to YYYY-MM-DD for comparison
+        const dateString = date.toISOString().split('T')[0]
+
+        // Count tickets for this day
+        const count = tickets.filter(t => t.created_at.startsWith(dateString)).length
+
+        dailyVolume.push({
+            date: date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+            count
+        })
+    }
+
     const recentTickets = tickets.slice(0, 8)
 
     return (
@@ -92,54 +125,67 @@ export default async function AdminDashboard() {
 
             {/* KPI Cards */}
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 w-full">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
-                        <CardTitle className="text-sm font-medium">Novos Tickets</CardTitle>
-                        <AlertCircle className="h-4 w-4 text-zinc-500" />
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                        <div className="text-2xl font-bold text-[#0C0C0C]">{newTickets}</div>
-                        <p className="text-xs text-muted-foreground mt-1">Aguardando triagem</p>
-                    </CardContent>
-                </Card>
+                <Link href="/admin/tickets?status=novo" className="block transition-transform hover:scale-[1.02]">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
+                            <CardTitle className="text-sm font-medium">Novos Tickets</CardTitle>
+                            <AlertCircle className="h-4 w-4 text-zinc-500" />
+                        </CardHeader>
+                        <CardContent className="p-4 pt-0">
+                            <div className="text-2xl font-bold text-[#0C0C0C]">{newTickets}</div>
+                            <p className="text-xs text-muted-foreground mt-1">Aguardando triagem</p>
+                        </CardContent>
+                    </Card>
+                </Link>
 
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
-                        <CardTitle className="text-sm font-medium">Em Processo</CardTitle>
-                        <TrendingUp className="h-4 w-4 text-blue-600" />
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                        <div className="text-2xl font-bold text-blue-600">{openTickets}</div>
-                        <p className="text-xs text-muted-foreground mt-1">Total em andamento</p>
-                    </CardContent>
-                </Card>
+                <Link href="/admin/tickets?status=em_analise" className="block transition-transform hover:scale-[1.02]">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
+                            <CardTitle className="text-sm font-medium">Em Processo</CardTitle>
+                            <TrendingUp className="h-4 w-4 text-blue-600" />
+                        </CardHeader>
+                        <CardContent className="p-4 pt-0">
+                            <div className="text-2xl font-bold text-blue-600">{openTickets}</div>
+                            <p className="text-xs text-muted-foreground mt-1">Total em andamento</p>
+                        </CardContent>
+                    </Card>
+                </Link>
 
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
-                        <CardTitle className="text-sm font-medium">Tempo Médio</CardTitle>
-                        <Clock className="h-4 w-4 text-zinc-500" />
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                        <div className="text-2xl font-bold text-zinc-700">{avgResolutionDays} <span className="text-xs font-normal text-zinc-400">dias</span></div>
-                        <p className="text-xs text-muted-foreground mt-1">Para resolução final</p>
-                    </CardContent>
-                </Card>
+                <Link href="/admin/tickets" className="block transition-transform hover:scale-[1.02]">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
+                            <CardTitle className="text-sm font-medium">Tempo Médio</CardTitle>
+                            <Clock className="h-4 w-4 text-zinc-500" />
+                        </CardHeader>
+                        <CardContent className="p-4 pt-0">
+                            <div className="text-2xl font-bold text-zinc-700">{avgResolutionDays} <span className="text-xs font-normal text-zinc-400">dias</span></div>
+                            <p className="text-xs text-muted-foreground mt-1">Para resolução final</p>
+                        </CardContent>
+                    </Card>
+                </Link>
 
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Acumulado</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                        <div className="text-2xl font-bold text-zinc-400">
-                            {totalTickets}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">Histórico completo</p>
-                    </CardContent>
-                </Card>
+                <Link href="/admin/tickets" className="block transition-transform hover:scale-[1.02]">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
+                            <CardTitle className="text-sm font-medium">Total Acumulado</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-4 pt-0">
+                            <div className="text-2xl font-bold text-zinc-400">
+                                {totalTickets}
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">Histórico completo</p>
+                        </CardContent>
+                    </Card>
+                </Link>
             </div>
 
             {/* CHARTS SECTION */}
-            <AnalyticsCharts topProducts={topProducts} statusDistribution={statusDistribution} />
+            <AnalyticsCharts
+                topProducts={topProducts}
+                topBrands={topBrands}
+                statusDistribution={statusDistribution}
+                dailyVolume={dailyVolume}
+            />
 
             {/* Recent Tickets Table */}
             <Card>

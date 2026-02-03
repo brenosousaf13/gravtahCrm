@@ -173,7 +173,7 @@ export default function NewTicketPage() {
                     sku: data.sku,
                     issue_description: data.issue_description,
                     batch_number: data.batch_number || null,
-                    manufacturing_date: data.manufacturing_date || null,
+                    manufacturing_date: data.manufacturing_date ? `${data.manufacturing_date}-01` : null,
                 })
                 .select()
                 .single()
@@ -198,7 +198,6 @@ export default function NewTicketPage() {
                 }
 
                 // Insert into attachment table
-                // Note: We use the PATH as file_url to be consistent with existing display logic
                 const { error: attachError } = await supabase.from("ticket_attachments").insert({
                     ticket_id: ticketId,
                     file_url: fileName,
@@ -259,14 +258,19 @@ export default function NewTicketPage() {
                                         <SelectItem value="Corima">Corima</SelectItem>
                                         <SelectItem value="Scicon">Scicon</SelectItem>
                                         <SelectItem value="Fulcrum">Fulcrum</SelectItem>
+                                        <SelectItem value="Velotoze">Velotoze</SelectItem>
+                                        <SelectItem value="Supacaz">Supacaz</SelectItem>
+                                        <SelectItem value="Wahoo">Wahoo</SelectItem>
                                         <SelectItem value="Outros">Outros</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                    </SelectContent >
+                                </Select >
                                 {/* Form Error Handling for Brand */}
-                                {form.formState.errors.brand && (
-                                    <p className="text-xs text-red-500">{form.formState.errors.brand.message}</p>
-                                )}
-                            </div>
+                                {
+                                    form.formState.errors.brand && (
+                                        <p className="text-xs text-red-500">{form.formState.errors.brand.message}</p>
+                                    )
+                                }
+                            </div >
 
                             <div className="space-y-2">
                                 <Label>Modelo *</Label>
@@ -275,54 +279,58 @@ export default function NewTicketPage() {
                                     <p className="text-xs text-red-500">{form.formState.errors.model.message}</p>
                                 )}
                             </div>
-                        </div>
+                        </div >
 
                         {/* Restricted Info Alert */}
-                        {isRestrictedBrand && (
-                            <Alert variant="warning" className="animate-in fade-in slide-in-from-top-2">
-                                <AlertTriangle className="h-4 w-4" />
-                                <AlertTitle className="uppercase font-bold text-xs flex items-center gap-2">
-                                    Atenção Necessária
-                                    {helperContent && (
-                                        <Button
-                                            type="button"
-                                            variant="link"
-                                            className="h-auto p-0 text-amber-700 underline text-xs font-normal ml-auto"
-                                            onClick={() => setIsHelperOpen(true)}
-                                        >
-                                            Onde encontrar esses dados?
-                                        </Button>
-                                    )}
-                                </AlertTitle>
-                                <AlertDescription>
-                                    Para produtos <strong>{selectedBrand}</strong>, é obrigatório informar o número de lote (Batch) e a data de fabricação.
-                                    <br />
-                                    <span className="text-xs opacity-80 mt-1 block">
-                                        Geralmente encontrados em uma etiqueta na parte interna ou caixa.
-                                    </span>
-                                </AlertDescription>
-                            </Alert>
-                        )}
+                        {
+                            isRestrictedBrand && (
+                                <Alert variant="warning" className="animate-in fade-in slide-in-from-top-2">
+                                    <AlertTriangle className="h-4 w-4" />
+                                    <AlertTitle className="uppercase font-bold text-xs flex items-center gap-2">
+                                        Atenção Necessária
+                                        {helperContent && (
+                                            <Button
+                                                type="button"
+                                                variant="link"
+                                                className="h-auto p-0 text-amber-700 underline text-xs font-normal ml-auto"
+                                                onClick={() => setIsHelperOpen(true)}
+                                            >
+                                                Onde encontrar esses dados?
+                                            </Button>
+                                        )}
+                                    </AlertTitle>
+                                    <AlertDescription>
+                                        Para produtos <strong>{selectedBrand}</strong>, é obrigatório informar o número de lote (Batch) e a data de fabricação.
+                                        <br />
+                                        <span className="text-xs opacity-80 mt-1 block">
+                                            Geralmente encontrados em uma etiqueta na parte interna ou caixa.
+                                        </span>
+                                    </AlertDescription>
+                                </Alert>
+                            )
+                        }
 
                         {/* Restricted Fields */}
-                        {isRestrictedBrand && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-zinc-50 rounded-md border border-zinc-100">
-                                <div className="space-y-2">
-                                    <Label className="text-amber-700">Batch Number (Lote) *</Label>
-                                    <Input {...form.register("batch_number")} placeholder="Ex: 123456" className="bg-white" />
-                                    {form.formState.errors.batch_number && (
-                                        <p className="text-xs text-red-500">{form.formState.errors.batch_number.message}</p>
-                                    )}
+                        {
+                            isRestrictedBrand && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-zinc-50 rounded-md border border-zinc-100">
+                                    <div className="space-y-2">
+                                        <Label className="text-amber-700">Batch Number (Lote) *</Label>
+                                        <Input {...form.register("batch_number")} placeholder="Ex: 123456" className="bg-white" />
+                                        {form.formState.errors.batch_number && (
+                                            <p className="text-xs text-red-500">{form.formState.errors.batch_number.message}</p>
+                                        )}
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-amber-700">Data de Fabricação (Mês/Ano) *</Label>
+                                        <Input type="month" {...form.register("manufacturing_date")} className="bg-white" />
+                                        {form.formState.errors.manufacturing_date && (
+                                            <p className="text-xs text-red-500">{form.formState.errors.manufacturing_date.message}</p>
+                                        )}
+                                    </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label className="text-amber-700">Data de Fabricação *</Label>
-                                    <Input type="date" {...form.register("manufacturing_date")} className="bg-white" />
-                                    {form.formState.errors.manufacturing_date && (
-                                        <p className="text-xs text-red-500">{form.formState.errors.manufacturing_date.message}</p>
-                                    )}
-                                </div>
-                            </div>
-                        )}
+                            )
+                        }
 
                         {/* Row 2 */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -422,36 +430,38 @@ export default function NewTicketPage() {
                             </Button>
                         </div>
 
-                    </form>
-                </CardContent>
-            </Card>
+                    </form >
+                </CardContent >
+            </Card >
 
             {/* Helper Dialog */}
-            {helperContent && (
-                <Dialog open={isHelperOpen} onOpenChange={setIsHelperOpen}>
-                    <DialogContent className="sm:max-w-md">
-                        <DialogHeader>
-                            <DialogTitle>Localizando Código do Produto</DialogTitle>
-                            <DialogDescription>
-                                {helperContent.text}
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="flex flex-col items-center justify-center p-4 bg-zinc-50 rounded-lg border border-zinc-100">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                                src={helperContent.image}
-                                alt={helperContent.alt}
-                                className="rounded-md object-contain max-h-[300px] w-auto shadow-sm"
-                            />
-                        </div>
-                        <DialogFooter className="sm:justify-center">
-                            <Button type="button" variant="outline" onClick={() => setIsHelperOpen(false)}>
-                                Entendi
-                            </Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
-            )}
-        </div>
+            {
+                helperContent && (
+                    <Dialog open={isHelperOpen} onOpenChange={setIsHelperOpen}>
+                        <DialogContent className="sm:max-w-md">
+                            <DialogHeader>
+                                <DialogTitle>Localizando Código do Produto</DialogTitle>
+                                <DialogDescription>
+                                    {helperContent.text}
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="flex flex-col items-center justify-center p-4 bg-zinc-50 rounded-lg border border-zinc-100">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                    src={helperContent.image}
+                                    alt={helperContent.alt}
+                                    className="rounded-md object-contain max-h-[300px] w-auto shadow-sm"
+                                />
+                            </div>
+                            <DialogFooter className="sm:justify-center">
+                                <Button type="button" variant="outline" onClick={() => setIsHelperOpen(false)}>
+                                    Entendi
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                )
+            }
+        </div >
     )
 }
