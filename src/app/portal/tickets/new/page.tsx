@@ -20,6 +20,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
 import { Info, Upload, AlertTriangle, Paperclip, X, FileText } from "lucide-react"
 
 // 1. Zod Schema
@@ -109,6 +117,29 @@ export default function NewTicketPage() {
     const triggerFileInput = () => {
         fileInputRef.current?.click()
     }
+
+    const [isHelperOpen, setIsHelperOpen] = useState(false)
+
+    // Helper content based on brand
+    const getHelperContent = () => {
+        if (selectedBrand === "MET") {
+            return {
+                image: "/capacete.jpeg",
+                text: "Capacete (parte interna a direita)",
+                alt: "Localização do código no capacete MET"
+            }
+        }
+        if (selectedBrand === "Hutchinson") {
+            return {
+                image: "/pneu.jpeg",
+                text: "Pneu (lateral composto por mês e ano)",
+                alt: "Localização do código no pneu Hutchinson"
+            }
+        }
+        return null
+    }
+
+    const helperContent = getHelperContent()
 
     const onSubmit = async (data: TicketFormValues) => {
         setLoading(true)
@@ -250,7 +281,19 @@ export default function NewTicketPage() {
                         {isRestrictedBrand && (
                             <Alert variant="warning" className="animate-in fade-in slide-in-from-top-2">
                                 <AlertTriangle className="h-4 w-4" />
-                                <AlertTitle className="uppercase font-bold text-xs">Atenção Necessária</AlertTitle>
+                                <AlertTitle className="uppercase font-bold text-xs flex items-center gap-2">
+                                    Atenção Necessária
+                                    {helperContent && (
+                                        <Button
+                                            type="button"
+                                            variant="link"
+                                            className="h-auto p-0 text-amber-700 underline text-xs font-normal ml-auto"
+                                            onClick={() => setIsHelperOpen(true)}
+                                        >
+                                            Onde encontrar esses dados?
+                                        </Button>
+                                    )}
+                                </AlertTitle>
                                 <AlertDescription>
                                     Para produtos <strong>{selectedBrand}</strong>, é obrigatório informar o número de lote (Batch) e a data de fabricação.
                                     <br />
@@ -382,6 +425,33 @@ export default function NewTicketPage() {
                     </form>
                 </CardContent>
             </Card>
+
+            {/* Helper Dialog */}
+            {helperContent && (
+                <Dialog open={isHelperOpen} onOpenChange={setIsHelperOpen}>
+                    <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>Localizando Código do Produto</DialogTitle>
+                            <DialogDescription>
+                                {helperContent.text}
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="flex flex-col items-center justify-center p-4 bg-zinc-50 rounded-lg border border-zinc-100">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                                src={helperContent.image}
+                                alt={helperContent.alt}
+                                className="rounded-md object-contain max-h-[300px] w-auto shadow-sm"
+                            />
+                        </div>
+                        <DialogFooter className="sm:justify-center">
+                            <Button type="button" variant="outline" onClick={() => setIsHelperOpen(false)}>
+                                Entendi
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            )}
         </div>
     )
 }
