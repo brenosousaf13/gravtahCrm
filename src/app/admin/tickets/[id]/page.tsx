@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { TicketChat } from "@/components/ticket/ticket-chat"
 import { TicketActions } from "@/components/ticket-actions"
+import { TicketAttachments } from "@/components/ticket/ticket-attachments"
 import { FileText, ArrowLeft, Box, User, Calendar, AlertTriangle } from "lucide-react"
 import Link from "next/link"
 
@@ -138,43 +139,11 @@ export default async function AdminTicketPage(props: PageProps) {
                     <div className="h-px bg-zinc-200 w-full" />
 
                     {/* BLOCK 3: ATTACHMENTS */}
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-2 text-xs font-bold text-zinc-400 uppercase tracking-wider">
-                            <FileText className="w-3 h-3" /> Arquivos ({ticket.ticket_attachments?.length || 0})
-                        </div>
-
-                        {ticket.ticket_attachments && ticket.ticket_attachments.length > 0 ? (
-                            <div className="grid grid-cols-3 gap-2">
-                                {ticket.ticket_attachments.map((file: any) => {
-                                    const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/warranty-files/${file.file_url}`
-                                    const isImage = file.file_type?.startsWith('image/')
-
-                                    return (
-                                        <a
-                                            key={file.id}
-                                            href={publicUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="block aspect-square rounded-md border border-zinc-200 overflow-hidden hover:border-zinc-900 transition-colors bg-white relative group"
-                                        >
-                                            {isImage ? (
-                                                <img src={publicUrl} alt="File" className="w-full h-full object-cover" />
-                                            ) : (
-                                                <div className="w-full h-full flex flex-col items-center justify-center text-zinc-400">
-                                                    <FileText className="w-6 h-6" />
-                                                    <span className="text-[8px] uppercase font-bold mt-1 max-w-[90%] truncate">
-                                                        {file.file_type?.split('/')[1] || 'FILE'}
-                                                    </span>
-                                                </div>
-                                            )}
-                                        </a>
-                                    )
-                                })}
-                            </div>
-                        ) : (
-                            <p className="text-xs text-zinc-400 italic">Sem anexos.</p>
-                        )}
-                    </div>
+                    <TicketAttachments
+                        ticketId={ticket.id}
+                        attachments={ticket.ticket_attachments}
+                        userId={user.id}
+                    />
 
                     <div className="h-px bg-zinc-200 w-full" />
 
