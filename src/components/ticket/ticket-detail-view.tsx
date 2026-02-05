@@ -4,10 +4,13 @@
 import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { TicketChat } from "@/components/ticket/ticket-chat"
-import { FileText, ArrowLeft, Box, Calendar, AlertTriangle, Info, X } from "lucide-react"
+import { FileText, ArrowLeft, Box, Calendar, AlertTriangle, Info, X, Loader2, Upload } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { createClient } from "@/lib/supabase/client"
+import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 
 interface TicketDetailViewProps {
     ticket: any
@@ -17,10 +20,61 @@ interface TicketDetailViewProps {
 
 export function TicketDetailView({ ticket, messages, currentUserId }: TicketDetailViewProps) {
     const [showMobileInfo, setShowMobileInfo] = useState(false)
+    const [isUploading, setIsUploading] = useState(false)
+    const router = useRouter()
+
     const hasTraceabilityInfo = ticket.batch_number || ticket.manufacturing_date
 
     // Helper for public URLs (same as before)
     const getPublicUrl = (path: string) => `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/warranty-files/${path}`
+
+    const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files?.length) return
+
+        setIsUploading(true)
+        const supabase = createClient()
+        const files = Array.from(e.target.files)
+        let successCount = 0
+
+        try {
+            const uploadPromises = files.map(async (file, index) => {
+                const fileExt = file.name.split('.').pop()
+                const uniqueId = Math.random().toString(36).substring(7)
+                // Usando currentUserId para manter consistência da pasta, se possível. 
+                // Se o usuário atual for admin vendo a view (não deveria acontecer nessa view específica que é para clientes), ok.
+                const fileName = `${currentUserId}/${ticket.id}/${Date.now()}_${index}_${uniqueId}.${fileExt}`
+
+                const { error: uploadError } = await supabase.storage
+                    .from("warranty-files")
+                    .upload(fileName, file)
+
+                if (uploadError) throw uploadError
+
+                const { error: attachError } = await supabase.from("ticket_attachments").insert({
+                    ticket_id: ticket.id,
+                    file_url: fileName,
+                    file_type: file.type
+                })
+
+                if (attachError) throw attachError
+
+                successCount++
+            })
+
+            await Promise.all(uploadPromises)
+
+            toast.success(`${successCount} arquivos enviados com sucesso!`)
+            router.refresh()
+
+        } catch (error) {
+            console.error("Erro ao enviar arquivos:", error)
+            toast.error("Alguns arquivos não puderam ser enviados.")
+        } finally {
+            setIsUploading(false)
+            // Reset input
+            e.target.value = ""
+        }
+    }
 
     return (
         <div className="flex flex-col fixed inset-0 z-40 bg-white md:pl-64 pt-16 md:pt-0">
@@ -144,8 +198,32 @@ export function TicketDetailView({ ticket, messages, currentUserId }: TicketDeta
 
                     {/* BLOCK 3: ATTACHMENTS */}
                     <div className="space-y-4">
-                        <div className="flex items-center gap-2 text-xs font-bold text-zinc-400 uppercase tracking-wider">
-                            <FileText className="w-3 h-3" /> Seus Anexos ({ticket.ticket_attachments?.length || 0})
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                                <FileText className="w-3 h-3" /> Seus Anexos ({ticket.ticket_attachments?.length || 0})
+                            </div>
+
+                            <div className="relative">
+                                <input
+                                    type="file"
+                                    multiple
+                                    className="hidden"
+                                    id="client-upload"
+                                    onChange={handleUpload}
+                                    disabled={isUploading}
+                                />
+                                <label
+                                    htmlFor="client-upload"
+                                    className={`
+                                        cursor-pointer flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider 
+                                        px-2 py-1 rounded bg-zinc-100 hover:bg-zinc-200 text-zinc-600 transition-colors
+                                        ${isUploading ? "opacity-50 pointer-events-none" : ""}
+                                    `}
+                                >
+                                    {isUploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+                                    {isUploading ? "Enviando..." : "Adicionar"}
+                                </label>
+                            </div>
                         </div>
 
                         {ticket.ticket_attachments && ticket.ticket_attachments.length > 0 ? (
