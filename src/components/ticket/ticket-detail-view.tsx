@@ -108,7 +108,7 @@ export function TicketDetailView({ ticket, messages, currentUserId }: TicketDeta
 
                     <div className="hidden md:flex items-center gap-2 text-xs font-medium text-zinc-500">
                         <Calendar className="w-4 h-4 text-zinc-400" />
-                        <span>{new Date(ticket.created_at).toLocaleDateString()}</span>
+                        <span suppressHydrationWarning>{new Date(ticket.created_at).toLocaleDateString('pt-BR')}</span>
                     </div>
                 </div>
             </header>

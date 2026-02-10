@@ -50,6 +50,7 @@ interface Ticket {
         full_name: string | null
         email: string | null
     } | null
+    has_admin_unread?: boolean
 }
 
 interface TicketsDataTableProps {
@@ -233,9 +234,17 @@ export function TicketsDataTable({ tickets }: TicketsDataTableProps) {
                                         {new Date(ticket.created_at).toLocaleDateString('pt-BR')}
                                     </TableCell>
                                     <TableCell>
-                                        <Badge variant={ticket.status as any} className="uppercase text-[10px]">
-                                            {ticket.status.replace(/_/g, " ")}
-                                        </Badge>
+                                        <div className="flex items-center gap-2">
+                                            <Badge variant={ticket.status as any} className="uppercase text-[10px]">
+                                                {ticket.status.replace(/_/g, " ")}
+                                            </Badge>
+                                            {ticket.has_admin_unread && (
+                                                <span className="relative flex h-2 w-2">
+                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                                                </span>
+                                            )}
+                                        </div>
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>

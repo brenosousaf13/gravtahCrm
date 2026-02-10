@@ -12,6 +12,18 @@ export async function sendMessage(ticketId: string, message: string) {
         throw new Error("Unauthorized")
     }
 
+    // Get User Role
+    const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single()
+
+    console.log('[sendMessage] User:', user.email, 'Role:', profile?.role)
+
+    const isAdmin = profile?.role === 'admin'
+
+    // 1. Insert Message
     const { error } = await supabase
         .from("ticket_messages")
         .insert({
@@ -25,9 +37,19 @@ export async function sendMessage(ticketId: string, message: string) {
         throw new Error("Failed to send message")
     }
 
+    // 2. Update Ticket Status (Unread Flag)
+    await supabase
+        .from("tickets")
+        .update({
+            has_admin_unread: !isAdmin,
+            updated_at: new Date().toISOString()
+        })
+        .eq("id", ticketId)
+
     // Revalidate Paths
     revalidatePath(`/portal/tickets/${ticketId}`)
     revalidatePath(`/admin/tickets/${ticketId}`)
+    revalidatePath("/admin/tickets") // Update list view
 
     return { success: true }
 }
