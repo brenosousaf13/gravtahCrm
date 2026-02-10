@@ -54,15 +54,20 @@ export async function updateSession(request: NextRequest) {
     // Redirect to dashboard if logged in and trying to access login/register
     if (user) {
         if (request.nextUrl.pathname.startsWith('/login') || request.nextUrl.pathname.startsWith('/register')) {
-            // Simple heuristic: admin -> admin dashboard, others -> portal dashboard. 
-            // Since we don't know the role here easily without DB call (which is expensive in middleware), 
-            // we can default to portal or just let them proceed (usually page will redirect).
-            // For now, I'll avoid auto-redirecting FROM login to avoid loops or wrong assumptions, 
-            // unless I strictly separate /admin and /portal login flows.
-            // Let's safe-guard: if they are on login and valid user, maybe send to tickets or dashboard?
-            // Leaving it alone is safer unless user asked for it.
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', user.id)
+                .single()
+
             const url = request.nextUrl.clone()
-            url.pathname = '/portal/dashboard' // Default to portal
+
+            if (profile?.role === 'admin') {
+                url.pathname = '/admin/dashboard'
+            } else {
+                url.pathname = '/portal/dashboard'
+            }
+
             return NextResponse.redirect(url)
         }
     }
