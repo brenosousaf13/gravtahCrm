@@ -79,15 +79,20 @@ export function TicketChat({ ticketId, initialMessages, currentUserId }: TicketC
                 )}
 
                 {messages.map((msg) => {
+                    const isAdminSender = msg.profiles?.role === 'admin'
                     const isMe = msg.sender_id === currentUserId
-                    const isAdmin = msg.profiles?.role === 'admin'
 
                     return (
-                        <div key={msg.id} className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`flex flex-col max-w-[85%] md:max-w-[70%] ${isMe ? 'items-end' : 'items-start'}`}>
+                        <div key={msg.id} className={`flex w-full ${isAdminSender ? 'justify-end' : 'justify-start'}`}>
+                            {/* Debug hidden */}
+                            <span className="hidden">
+                                {currentUserId} vs {msg.sender_id} | Role: {msg.profiles?.role}
+                            </span>
+
+                            <div className={`flex flex-col max-w-[85%] md:max-w-[70%] ${isAdminSender ? 'items-end' : 'items-start'}`}>
                                 <div className="flex items-center gap-2 mb-1 px-1">
                                     <span className="text-[10px] font-bold uppercase text-zinc-400 tracking-wider">
-                                        {isAdmin ? "Sup. Gravtah" : msg.profiles?.full_name?.split(' ')[0]}
+                                        {isAdminSender ? "Sup. Gravtah" : msg.profiles?.full_name?.split(' ')[0]}
                                     </span>
                                     <span
                                         className="text-[10px] text-zinc-300"
@@ -97,7 +102,7 @@ export function TicketChat({ ticketId, initialMessages, currentUserId }: TicketC
                                     </span>
                                 </div>
 
-                                <div className={`px-5 py-3 text-sm rounded-2xl shadow-sm whitespace-pre-wrap leading-relaxed ${isMe
+                                <div className={`px-5 py-3 text-sm rounded-2xl shadow-sm whitespace-pre-wrap leading-relaxed ${isAdminSender
                                     ? 'bg-[#0C0C0C] text-white rounded-tr-none'
                                     : 'bg-white border border-zinc-200 text-zinc-800 rounded-tl-none'
                                     }`}>
