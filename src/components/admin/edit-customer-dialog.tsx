@@ -40,6 +40,24 @@ const formSchema = z.object({
     document: z.string().optional().nullable(),
     phone: z.string().optional().nullable(),
     role: z.string().min(1, "Função é obrigatória"),
+    new_password: z.string().optional(),
+    confirm_password: z.string().optional(),
+}).refine((data) => {
+    if (data.new_password && data.new_password !== data.confirm_password) {
+        return false;
+    }
+    return true;
+}, {
+    message: "As senhas não coincidem",
+    path: ["confirm_password"],
+}).refine((data) => {
+    if (data.new_password && data.new_password.length < 6) {
+        return false;
+    }
+    return true;
+}, {
+    message: "A senha deve ter no mínimo 6 caracteres",
+    path: ["new_password"],
 })
 
 interface Profile {
@@ -76,6 +94,8 @@ export function EditCustomerDialog({
             document: customer.document || "",
             phone: customer.phone || "",
             role: customer.role || "cliente",
+            new_password: "",
+            confirm_password: "",
         },
     })
 
@@ -84,7 +104,8 @@ export function EditCustomerDialog({
         const supabase = createClient()
 
         try {
-            const { error } = await supabase
+            // Update profile info
+            const { error: profileError } = await supabase
                 .from("profiles")
                 .update({
                     full_name: values.full_name,
@@ -95,14 +116,28 @@ export function EditCustomerDialog({
                 })
                 .eq("id", customer.id)
 
-            if (error) throw error
+            if (profileError) throw profileError
+
+            // Update password if provided
+            if (values.new_password) {
+                const { error: passwordError } = await supabase.rpc("admin_update_user_password", {
+                    target_user_id: customer.id,
+                    new_password: values.new_password,
+                });
+
+                if (passwordError) {
+                    console.error("Error updating password:", passwordError)
+                    throw new Error("Erro ao atualizar a senha do usuário.");
+                }
+            }
 
             toast.success("Usuário atualizado com sucesso")
+            form.reset() // Limpar as senhas após sucesso
             onSuccess()
             onOpenChange(false)
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error updating profile:", error)
-            toast.error("Erro ao atualizar usuário")
+            toast.error(error.message || "Erro ao atualizar usuário")
         } finally {
             setIsLoading(false)
         }
@@ -205,7 +240,48 @@ export function EditCustomerDialog({
                                 </FormItem>
                             )}
                         />
-                        <DialogFooter>
+
+                        <div className="pt-4 border-t border-zinc-100">
+                            <h4 className="text-sm font-bold text-zinc-900 mb-4">Alterar Senha (Opcional)</h4>
+                            <div className="grid grid-cols-2 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name="new_password"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-xs">Nova Senha</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    type="password"
+                                                    placeholder="Deixe em branco p/ ignorar"
+                                                    {...field}
+                                                />
+                                            </FormControl>
+                                            <FormMessage className="text-[10px]" />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="confirm_password"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-xs">Confirmar Senha</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    type="password"
+                                                    placeholder="Deixe em branco p/ ignorar"
+                                                    {...field}
+                                                />
+                                            </FormControl>
+                                            <FormMessage className="text-[10px]" />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                        </div>
+
+                        <DialogFooter className="pt-2">
                             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                                 Cancelar
                             </Button>
