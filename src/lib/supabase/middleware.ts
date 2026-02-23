@@ -6,6 +6,14 @@ export async function updateSession(request: NextRequest) {
         request,
     })
 
+    // Intercept redirect loops from Supabase emails (if they default to /login)
+    if (request.nextUrl.pathname === '/login' && request.nextUrl.searchParams.has('code')) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/auth/callback'
+        url.searchParams.set('next', '/reset-password')
+        return NextResponse.redirect(url)
+    }
+
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -37,10 +45,12 @@ export async function updateSession(request: NextRequest) {
     // Protected routes
     if (!user) {
         const path = request.nextUrl.pathname
-        // Allow access to login, register, auth endpoints, and static assets/images
+        // Allow access to login, register, auth endpoints, password recovery, and static assets/images
         if (
             !path.startsWith('/login') &&
             !path.startsWith('/register') &&
+            !path.startsWith('/forgot-password') &&
+            !path.startsWith('/reset-password') &&
             !path.startsWith('/auth') &&
             !path.startsWith('/_next') &&
             !path.includes('.') // trivial check for likely static files (favicon.ico, etc)
