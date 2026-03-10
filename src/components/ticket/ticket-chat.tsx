@@ -98,7 +98,7 @@ export function TicketChat({ ticketId, initialMessages, currentUserId }: TicketC
                                         className="text-[10px] text-zinc-300"
                                         suppressHydrationWarning
                                     >
-                                        {format(new Date(msg.created_at), 'HH:mm', { locale: ptBR })}
+                                        {format(new Date(msg.created_at), 'dd/MM HH:mm', { locale: ptBR })}
                                     </span>
                                 </div>
 
