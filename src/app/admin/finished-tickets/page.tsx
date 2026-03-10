@@ -18,7 +18,7 @@ export default async function AdminFinishedTicketsPage() {
             )
         `)
         .eq("status", "finalizado")
-        .order("created_at", { ascending: false })
+        .order("updated_at", { ascending: false })
 
     if (error) {
         console.error("Error fetching finished tickets:", error)

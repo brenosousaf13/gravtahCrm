@@ -21,7 +21,7 @@ export default async function PortalFinishedTicketsPage() {
         .select("*")
         .eq("user_id", user.id)
         .eq("status", "finalizado")
-        .order("created_at", { ascending: false })
+        .order("updated_at", { ascending: false })
 
     return (
         <div className="flex-1 space-y-4 w-full p-4">

@@ -22,7 +22,7 @@ export default async function PortalDashboard() {
         .select("*")
         .eq("user_id", user.id)
         .neq("status", "finalizado")
-        .order("created_at", { ascending: false })
+        .order("updated_at", { ascending: false })
 
     return (
         <div className="flex-1 space-y-4 w-full p-4">
