@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Ticket, LogOut, PlusCircle, User, Menu, X } from "lucide-react"
+import { LayoutDashboard, Ticket, LogOut, PlusCircle, User, Menu, X, Archive } from "lucide-react"
 import { cn } from "@/lib/utils"
 // import { Header } from "@/components/layout/header" // Removed double header usage if present or integrate properly
 import { createClient } from "@/lib/supabase/client"
@@ -22,6 +22,12 @@ export default function PortalLayout({
             href: "/portal/dashboard",
             label: "Dashboard",
             icon: LayoutDashboard,
+            exact: true
+        },
+        {
+            href: "/portal/finished-tickets",
+            label: "Finalizados",
+            icon: Archive,
             exact: true
         },
         {

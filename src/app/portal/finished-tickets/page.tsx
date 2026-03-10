@@ -1,10 +1,9 @@
 import { createClient } from "@/lib/supabase/server"
 import { TicketCard } from "@/components/ticket-card"
-import { PackageOpen, Plus } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Archive } from "lucide-react"
 import Link from "next/link"
 
-export default async function PortalDashboard() {
+export default async function PortalFinishedTicketsPage() {
     const supabase = await createClient()
 
     // 1. Get User
@@ -16,12 +15,12 @@ export default async function PortalDashboard() {
         return <div>Non-authenticated</div>
     }
 
-    // 2. Fetch Tickets
+    // 2. Fetch Finished Tickets only
     const { data: tickets } = await supabase
         .from("tickets")
         .select("*")
         .eq("user_id", user.id)
-        .neq("status", "finalizado")
+        .eq("status", "finalizado")
         .order("created_at", { ascending: false })
 
     return (
@@ -29,32 +28,22 @@ export default async function PortalDashboard() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="space-y-1">
                     <h1 className="text-2xl font-black uppercase tracking-tight text-[#0C0C0C]">
-                        Meus Chamados
+                        Tickets Finalizados
                     </h1>
                 </div>
-                <Link href="/portal/tickets/new">
-                    <Button className="bg-[#0C0C0C] hover:bg-zinc-800 text-white gap-2 uppercase font-bold tracking-wide">
-                        <Plus className="w-4 h-4" /> Novo Ticket
-                    </Button>
-                </Link>
             </div>
 
             {!tickets || tickets.length === 0 ? (
                 <div className="flex flex-col items-center justify-center p-12 border-2 border-dashed border-zinc-200 rounded-lg bg-zinc-50/50 min-h-[400px]">
                     <div className="bg-white p-4 rounded-full shadow-sm mb-4">
-                        <PackageOpen className="w-8 h-8 text-zinc-400" />
+                        <Archive className="w-8 h-8 text-zinc-400" />
                     </div>
                     <h3 className="text-lg font-bold text-zinc-900 mb-1">
-                        Nenhum ticket encontrado
+                        Nenhum ticket finalizado
                     </h3>
                     <p className="text-zinc-500 text-sm max-w-sm text-center mb-6">
-                        Você ainda não abriu nenhuma solicitação de garantia.
+                        Você não possui nenhuma solicitação de garantia concluída no momento.
                     </p>
-                    <Link href="/portal/tickets/new">
-                        <Button className="bg-[#0C0C0C] hover:bg-zinc-800 text-white">
-                            Abrir meu primeiro ticket
-                        </Button>
-                    </Link>
                 </div>
             ) : (
                 <div className="grid gap-4 grid-cols-1 md:grid-cols-3 auto-rows-fr">

@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Ticket, Users, LogOut } from "lucide-react"
+import { LayoutDashboard, Ticket, Users, LogOut, Archive } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Header } from "@/components/layout/header"
 import { createClient } from "@/lib/supabase/client"
@@ -23,9 +23,15 @@ export default function AdminLayout({
         },
         {
             href: "/admin/tickets",
-            label: "Tickets",
+            label: "Tickets Abertos",
             icon: Ticket,
-            exact: false
+            exact: true
+        },
+        {
+            href: "/admin/finished-tickets",
+            label: "Finalizados",
+            icon: Archive,
+            exact: true
         },
         {
             href: "/admin/customers",

@@ -2,11 +2,10 @@ import { createClient } from "@/lib/supabase/server"
 import { ExportButton } from "@/components/admin/export-button"
 import { TicketsDataTable } from "@/components/admin/tickets-data-table"
 
-export default async function AdminTicketsPage() {
+export default async function AdminFinishedTicketsPage() {
     const supabase = await createClient()
 
-    // Fetch all tickets for client-side filtering (MVP)
-    // Ordered by newest first
+    // Fetch only finished tickets
     const { data: tickets, error } = await supabase
         .from("tickets")
         .select(`
@@ -18,12 +17,12 @@ export default async function AdminTicketsPage() {
                 document
             )
         `)
-        .neq("status", "finalizado")
+        .eq("status", "finalizado")
         .order("created_at", { ascending: false })
 
     if (error) {
-        console.error("Error fetching tickets:", error)
-        return <div className="p-8 text-red-500">Erro ao carregar tickets.</div>
+        console.error("Error fetching finished tickets:", error)
+        return <div className="p-8 text-red-500">Erro ao carregar tickets finalizados.</div>
     }
 
     return (
@@ -31,10 +30,10 @@ export default async function AdminTicketsPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-black uppercase tracking-tight text-[#0C0C0C]">
-                        Gerenciar Tickets
+                        Tickets Finalizados
                     </h1>
                     <p className="text-zinc-500">
-                        Visualize e gerencie todas as solicitações de garantia.
+                        Histórico de todas as solicitações de garantia já concluídas.
                     </p>
                 </div>
                 <ExportButton tickets={tickets || []} />
