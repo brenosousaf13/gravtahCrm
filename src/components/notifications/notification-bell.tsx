@@ -32,6 +32,7 @@ export function NotificationBell() {
     const [notifications, setNotifications] = useState<Notification[]>([])
     const [unreadCount, setUnreadCount] = useState(0)
     const [isOpen, setIsOpen] = useState(false)
+    const [userRole, setUserRole] = useState("cliente")
     const supabase = createClient()
     const router = useRouter()
 
@@ -46,14 +47,8 @@ export function NotificationBell() {
                     event: 'INSERT',
                     schema: 'public',
                     table: 'notifications',
-                    // Filter in callback or valid filter string if possible. 
-                    // RLS should handle row visibility, but real-time sometimes needs User ID.
-                    // Assuming RLS allows us to just listen or we subscribe generally and filter client-side if needed, 
-                    // but best practice is filtering by user_id if we had it handy in a variable.
-                    // For now we'll fetch strictly on event.
                 },
                 (payload) => {
-                    // Ideally check payload.new.user_id === currentUserId
                     fetchNotifications()
                 }
             )
@@ -67,6 +62,16 @@ export function NotificationBell() {
     const fetchNotifications = async () => {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return
+
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single()
+
+        if (profile?.role) {
+            setUserRole(profile.role)
+        }
 
         const { data } = await supabase
             .from('notifications')
@@ -151,7 +156,10 @@ export function NotificationBell() {
                                     "flex flex-col items-start gap-1 p-4 cursor-pointer focus:bg-zinc-50 border-b border-zinc-50 last:border-0",
                                     !notification.read && "bg-blue-50/30"
                                 )}
-                                onClick={() => markAsRead(notification.id, notification.link || (notification.ticket_id ? `/portal/tickets/${notification.ticket_id}` : undefined))}
+                                onClick={() => {
+                                    const basePath = userRole === 'admin' ? '/admin/tickets' : '/portal/tickets'
+                                    markAsRead(notification.id, notification.link || (notification.ticket_id ? `${basePath}/${notification.ticket_id}` : undefined))
+                                }}
                             >
                                 <div className="flex w-full justify-between items-start">
                                     <span className={cn("text-xs font-bold", !notification.read ? "text-[#0C0C0C]" : "text-zinc-500")}>
