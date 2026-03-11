@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { FileText, Loader2, Upload } from "lucide-react"
+import { FileText, Loader2, Upload, Trash } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
@@ -15,9 +15,44 @@ interface TicketAttachmentsProps {
 
 export function TicketAttachments({ ticketId, attachments, userId, readOnly = false }: TicketAttachmentsProps) {
     const [isUploading, setIsUploading] = useState(false)
+    const [isDeleting, setIsDeleting] = useState("")
     const router = useRouter()
 
     const getPublicUrl = (path: string) => `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/warranty-files/${path}`
+
+    const handleRemoveAttachment = async (e: React.MouseEvent, attachmentId: string, fileUrl: string) => {
+        e.preventDefault()
+        if (!confirm("Tem certeza que deseja remover este anexo? Essa ação não pode ser desfeita.")) return
+
+        setIsDeleting(attachmentId)
+        const supabase = createClient()
+        try {
+            // 1. Remove from Storage
+            const { error: storageError } = await supabase.storage
+                .from("warranty-files")
+                .remove([fileUrl])
+
+            if (storageError) {
+                console.error("Storage delete error:", storageError)
+            }
+
+            // 2. Remove from DB
+            const { error: dbError } = await supabase
+                .from("ticket_attachments")
+                .delete()
+                .eq("id", attachmentId)
+
+            if (dbError) throw dbError
+
+            toast.success("Anexo removido com sucesso")
+            router.refresh()
+        } catch (error) {
+            console.error("Error deleting attachment:", error)
+            toast.error("Erro ao remover anexo")
+        } finally {
+            setIsDeleting("")
+        }
+    }
 
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files?.length) return
@@ -104,24 +139,36 @@ export function TicketAttachments({ ticketId, attachments, userId, readOnly = fa
                         const isImage = file.file_type?.startsWith('image/')
 
                         return (
-                            <a
-                                key={file.id}
-                                href={publicUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="block aspect-square rounded-md border border-zinc-200 overflow-hidden hover:border-zinc-900 transition-colors bg-white relative group"
-                            >
-                                {isImage ? (
-                                    <img src={publicUrl} alt="File" className="w-full h-full object-cover" />
-                                ) : (
-                                    <div className="w-full h-full flex flex-col items-center justify-center text-zinc-400">
-                                        <FileText className="w-6 h-6" />
-                                        <span className="text-[8px] uppercase font-bold mt-1 max-w-[90%] truncate">
-                                            {file.file_type?.split('/')[1] || 'FILE'}
-                                        </span>
-                                    </div>
+                            <div key={file.id} className="relative group">
+                                <a
+                                    href={publicUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block aspect-square rounded-md border border-zinc-200 overflow-hidden hover:border-zinc-900 transition-colors bg-white relative"
+                                >
+                                    {isImage ? (
+                                        <img src={publicUrl} alt="File" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="w-full h-full flex flex-col items-center justify-center text-zinc-400">
+                                            <FileText className="w-6 h-6" />
+                                            <span className="text-[8px] uppercase font-bold mt-1 max-w-[90%] truncate">
+                                                {file.file_type?.split('/')[1] || 'FILE'}
+                                            </span>
+                                        </div>
+                                    )}
+                                </a>
+                                {!readOnly && (
+                                    <button
+                                        type="button"
+                                        onClick={(e) => handleRemoveAttachment(e, file.id, file.file_url)}
+                                        disabled={isDeleting === file.id}
+                                        className="absolute top-1 right-1 bg-red-100/90 backdrop-blur-sm hover:bg-red-200 text-red-600 rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-all z-10 disabled:opacity-50 shadow-sm"
+                                        title="Remover anexo"
+                                    >
+                                        {isDeleting === file.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash className="w-3 h-3" />}
+                                    </button>
                                 )}
-                            </a>
+                            </div>
                         )
                     })}
                 </div>
