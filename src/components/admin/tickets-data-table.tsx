@@ -179,6 +179,7 @@ export function TicketsDataTable({ tickets }: TicketsDataTableProps) {
                             <SelectItem value="novo">Novos</SelectItem>
                             <SelectItem value="em_analise">Em Análise</SelectItem>
                             <SelectItem value="aguardando_resposta">Aguardando Resp.</SelectItem>
+                            <SelectItem value="aguardando_envio">Aguardando Envio</SelectItem>
                             <SelectItem value="aguardando_fabrica">Aguardando Fábrica</SelectItem>
                             <SelectItem value="aprovado">Aprovados</SelectItem>
                             <SelectItem value="negado">Negados</SelectItem>
@@ -240,8 +241,8 @@ export function TicketsDataTable({ tickets }: TicketsDataTableProps) {
                                             </Badge>
                                             {ticket.has_admin_unread && (
                                                 <span className="relative flex h-2 w-2">
-                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
                                                 </span>
                                             )}
                                         </div>

@@ -233,8 +233,15 @@ export default async function AdminDashboard() {
                                             </div>
                                         </TableCell>
                                         <TableCell>
-                                            {/* Using replace to format status nicely */}
-                                            <Badge variant={ticket.status as any} className="text-[10px] px-1 py-0">{ticket.status.replace(/_/g, " ")}</Badge>
+                                            <div className="flex items-center gap-2">
+                                                <Badge variant={ticket.status as any} className="text-[10px] px-1 py-0">{ticket.status.replace(/_/g, " ")}</Badge>
+                                                {ticket.has_admin_unread && (
+                                                    <span className="relative flex h-2 w-2">
+                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
+                                                    </span>
+                                                )}
+                                            </div>
                                         </TableCell>
                                         <TableCell className="text-zinc-500 text-xs">
                                             {new Date(ticket.created_at).toLocaleDateString()}
