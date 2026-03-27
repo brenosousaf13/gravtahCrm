@@ -21,6 +21,7 @@ const badgeVariants = cva(
                 negado: "border-transparent bg-red-500 text-white hover:bg-red-600", // Rejected
                 finalizado: "border-transparent bg-zinc-500 text-white hover:bg-zinc-600", // Closed
                 aguardando_resposta: "border-transparent bg-indigo-500 text-white hover:bg-indigo-600",
+                aguardando_importacao: "border-transparent bg-purple-500 text-white hover:bg-purple-600",
             },
         },
         defaultVariants: {
