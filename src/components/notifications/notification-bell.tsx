@@ -16,6 +16,7 @@ import {
 import { formatDistanceToNow } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 
 interface Notification {
     id: string
@@ -26,6 +27,33 @@ interface Notification {
     link?: string
     user_id: string
     ticket_id?: string
+}
+
+const playNotificationSound = () => {
+    try {
+        const AudioContext = window.AudioContext || (window as any).webkitAudioContext
+        if (!AudioContext) return
+        
+        const audioContext = new AudioContext()
+        const oscillator = audioContext.createOscillator()
+        const gainNode = audioContext.createGain()
+        
+        oscillator.connect(gainNode)
+        gainNode.connect(audioContext.destination)
+        
+        oscillator.type = 'sine'
+        // Two quick beeps
+        oscillator.frequency.setValueAtTime(880, audioContext.currentTime)
+        
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime)
+        gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.05)
+        gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.15)
+        
+        oscillator.start(audioContext.currentTime)
+        oscillator.stop(audioContext.currentTime + 0.2)
+    } catch (e) {
+        console.error("Audio playback failed", e)
+    }
 }
 
 export function NotificationBell() {
@@ -49,6 +77,13 @@ export function NotificationBell() {
                     table: 'notifications',
                 },
                 (payload) => {
+                    const newNotif = payload.new as Notification
+                    toast(newNotif.title, {
+                        description: newNotif.message,
+                        duration: 5000,
+                    })
+                    playNotificationSound()
+                    
                     fetchNotifications()
                 }
             )
