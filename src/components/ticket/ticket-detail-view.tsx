@@ -4,8 +4,8 @@
 import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { TicketChat } from "@/components/ticket/ticket-chat"
-import { FileText, ArrowLeft, Box, Calendar, AlertTriangle, Info, X, Loader2, Upload, Trash } from "lucide-react"
-import Link from "next/link"
+import { FileText, Box, Calendar, AlertTriangle, Info, X, Loader2, Upload, Trash } from "lucide-react"
+import { BackButton } from "@/components/ui/back-button"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { createClient } from "@/lib/supabase/client"
@@ -116,9 +116,7 @@ export function TicketDetailView({ ticket, messages, currentUserId }: TicketDeta
             {/* 1. HEADER (Sticky Top) - Adjusted for Mobile */}
             <header className="h-16 border-b border-zinc-200 bg-white px-4 md:px-6 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-2 md:gap-4 overflow-hidden">
-                    <Link href="/portal/dashboard" className="text-zinc-400 hover:text-black transition-colors shrink-0">
-                        <ArrowLeft className="w-5 h-5" />
-                    </Link>
+                    <BackButton />
                     <div className="h-6 w-px bg-zinc-200 shrink-0" />
                     <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-4 min-w-0">
                         <h1 className="font-black text-sm md:text-lg uppercase tracking-tight truncate">

@@ -4,8 +4,8 @@ import { Badge } from "@/components/ui/badge"
 import { TicketChat } from "@/components/ticket/ticket-chat"
 import { TicketActions } from "@/components/ticket-actions"
 import { TicketAttachments } from "@/components/ticket/ticket-attachments"
-import { FileText, ArrowLeft, Box, User, Calendar, AlertTriangle } from "lucide-react"
-import Link from "next/link"
+import { FileText, Box, User, Calendar, AlertTriangle } from "lucide-react"
+import { BackButton } from "@/components/ui/back-button"
 
 interface PageProps {
     params: Promise<{ id: string }>
@@ -41,9 +41,7 @@ export default async function AdminTicketPage(props: PageProps) {
             {/* 1. HEADER (Sticky Top) */}
             <header className="h-16 border-b border-zinc-200 bg-white px-6 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-4">
-                    <Link href="/admin/tickets" className="text-zinc-400 hover:text-black transition-colors">
-                        <ArrowLeft className="w-5 h-5" />
-                    </Link>
+                    <BackButton />
                     <div className="h-6 w-px bg-zinc-200" />
                     <h1 className="font-black text-lg uppercase tracking-tight">
                         Ticket #{ticket.ticket_number}

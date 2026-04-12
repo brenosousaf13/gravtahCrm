@@ -37,10 +37,31 @@ export async function sendMessage(ticketId: string, message: string) {
         throw new Error("Failed to send message")
     }
 
-    // 2. Update Ticket Status (Unread Flag)
+    // 2. Fetch current status to conditionally update
+    const { data: currentTicket } = await supabase
+        .from("tickets")
+        .select("status")
+        .eq("id", ticketId)
+        .single()
+
+    let nextStatus = currentTicket?.status
+
+    // Auto-status for Admins: If ticket is active and admin replies, set to waiting for reply.
+    if (isAdmin) {
+        if (["novo", "em_analise", "aguardando_envio", "aguardando_importacao"].includes(currentTicket?.status || "")) {
+            nextStatus = "aguardando_resposta"
+        }
+    } else {
+        // Optional: We can auto-set it back to em_analise if the customer replies?
+        // But the customer strictly asked about "Aguardando Resposta" not showing, so let's just 
+        // leave the current status and rely on `has_admin_unread` for the admin to see it.
+    }
+
+    // 3. Update Ticket Status & Unread Flag
     await supabase
         .from("tickets")
         .update({
+            status: nextStatus,
             has_admin_unread: !isAdmin,
             updated_at: new Date().toISOString()
         })

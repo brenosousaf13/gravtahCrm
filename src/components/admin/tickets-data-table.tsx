@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useSearchParams, usePathname, useRouter } from "next/navigation"
 import {
     Table,
     TableBody,
@@ -59,10 +59,13 @@ interface TicketsDataTableProps {
 
 export function TicketsDataTable({ tickets }: TicketsDataTableProps) {
     const router = useRouter()
-    const [search, setSearch] = useState("")
-    const [statusFilter, setStatusFilter] = useState("all")
-    const [brandFilter, setBrandFilter] = useState("all")
-    const [currentPage, setCurrentPage] = useState(1)
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+
+    const search = searchParams.get("q") || ""
+    const statusFilter = searchParams.get("status") || "all"
+    const brandFilter = searchParams.get("brand") || "all"
+    const currentPage = parseInt(searchParams.get("page") || "1", 10)
 
     // DELETE STATE
     const [ticketToDelete, setTicketToDelete] = useState<Ticket | null>(null)
@@ -73,6 +76,18 @@ export function TicketsDataTable({ tickets }: TicketsDataTableProps) {
     const [isEditOpen, setIsEditOpen] = useState(false)
 
     const itemsPerPage = 10
+
+    const updateParams = (updates: Record<string, string | null>) => {
+        const params = new URLSearchParams(searchParams.toString())
+        Object.entries(updates).forEach(([key, value]) => {
+            if (value === null || value === '' || value === 'all' || (key === 'page' && value === '1')) {
+                params.delete(key)
+            } else {
+                params.set(key, value)
+            }
+        })
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    }
 
     // Filter Logic
     const filteredTickets = tickets.filter((ticket) => {
@@ -96,18 +111,19 @@ export function TicketsDataTable({ tickets }: TicketsDataTableProps) {
     const paginatedTickets = filteredTickets.slice(startIndex, startIndex + itemsPerPage)
 
     const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSearch(e.target.value)
-        setCurrentPage(1) // Reset to first page
+        updateParams({ q: e.target.value, page: "1" })
     }
 
     const handleStatusChange = (value: string) => {
-        setStatusFilter(value)
-        setCurrentPage(1) // Reset to first page
+        updateParams({ status: value, page: "1" })
     }
 
     const handleBrandChange = (value: string) => {
-        setBrandFilter(value)
-        setCurrentPage(1) // Reset to first page
+        updateParams({ brand: value, page: "1" })
+    }
+
+    const handleSetCurrentPage = (page: number) => {
+        updateParams({ page: page.toString() })
     }
 
     const handleDeleteTicket = async () => {
@@ -298,7 +314,7 @@ export function TicketsDataTable({ tickets }: TicketsDataTableProps) {
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                            onClick={() => handleSetCurrentPage(Math.max(currentPage - 1, 1))}
                             disabled={currentPage === 1}
                         >
                             <ChevronLeft className="h-4 w-4" />
@@ -310,7 +326,7 @@ export function TicketsDataTable({ tickets }: TicketsDataTableProps) {
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                            onClick={() => handleSetCurrentPage(Math.min(currentPage + 1, totalPages))}
                             disabled={currentPage === totalPages}
                         >
                             Próximo
