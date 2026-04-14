@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useSearchParams, usePathname, useRouter } from "next/navigation"
 import {
     Table,
@@ -62,7 +62,9 @@ export function TicketsDataTable({ tickets }: TicketsDataTableProps) {
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
-    const search = searchParams.get("q") || ""
+    const initialSearch = searchParams.get("q") || ""
+    const [search, setSearch] = useState(initialSearch)
+
     const statusFilter = searchParams.get("status") || "all"
     const brandFilter = searchParams.get("brand") || "all"
     const currentPage = parseInt(searchParams.get("page") || "1", 10)
@@ -89,6 +91,16 @@ export function TicketsDataTable({ tickets }: TicketsDataTableProps) {
         router.replace(`${pathname}?${params.toString()}`, { scroll: false })
     }
 
+    // Debounce Search Filter
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (search !== (searchParams.get("q") || "")) {
+                updateParams({ q: search, page: "1" })
+            }
+        }, 300)
+        return () => clearTimeout(timer)
+    }, [search])
+
     // Filter Logic
     const filteredTickets = tickets.filter((ticket) => {
         const matchesSearch =
@@ -111,7 +123,7 @@ export function TicketsDataTable({ tickets }: TicketsDataTableProps) {
     const paginatedTickets = filteredTickets.slice(startIndex, startIndex + itemsPerPage)
 
     const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        updateParams({ q: e.target.value, page: "1" })
+        setSearch(e.target.value)
     }
 
     const handleStatusChange = (value: string) => {
