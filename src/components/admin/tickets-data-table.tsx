@@ -65,6 +65,21 @@ export function TicketsDataTable({ tickets }: TicketsDataTableProps) {
     const initialSearch = searchParams.get("q") || ""
     const [search, setSearch] = useState(initialSearch)
 
+    // Realtime: refresh list when any ticket is updated (e.g. has_admin_unread changes)
+    useEffect(() => {
+        const supabase = createClient()
+        const channel = supabase
+            .channel("admin-tickets-list")
+            .on("postgres_changes", { event: "UPDATE", schema: "public", table: "tickets" }, () => {
+                router.refresh()
+            })
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
+    }, [])
+
     const statusFilter = searchParams.get("status") || "all"
     const brandFilter = searchParams.get("brand") || "all"
     const currentPage = parseInt(searchParams.get("page") || "1", 10)

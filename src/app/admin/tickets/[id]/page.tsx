@@ -27,6 +27,11 @@ export default async function AdminTicketPage(props: PageProps) {
 
     if (error || !ticket) return notFound()
 
+    // Clear unread flag when admin opens the ticket
+    if (ticket.has_admin_unread) {
+        await supabase.from("tickets").update({ has_admin_unread: false }).eq("id", id)
+    }
+
     // Fetch Messages
     const { data: messages } = await supabase
         .from("ticket_messages")
