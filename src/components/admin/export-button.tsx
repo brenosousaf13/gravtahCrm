@@ -16,10 +16,19 @@ export function ExportButton({ tickets }: ExportButtonProps) {
                 return
             }
 
-            // Define Columns
+            const baseUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/warranty-files/`
+
+            // Find the maximum number of attachments across all tickets
+            const maxAttachments = tickets.reduce((max, t) => {
+                const count = t.ticket_attachments?.length || 0
+                return count > max ? count : max
+            }, 0)
+
+            // Build attachment column headers ("Anexo 1", "Anexo 2", ...)
+            const attachmentHeaders = Array.from({ length: maxAttachments }, (_, i) => `Anexo ${i + 1}`)
+
             const headers = [
-                "ID",
-                "Ticket Number",
+                "Ticket Nº",
                 "Data Abertura",
                 "Cliente - Nome",
                 "Cliente - Email",
@@ -32,20 +41,18 @@ export function ExportButton({ tickets }: ExportButtonProps) {
                 "Status",
                 "Solução",
                 "Data Fechamento",
-                "Anexos (Links)"
+                ...attachmentHeaders
             ]
 
             // Map Data
             const rows = tickets.map(t => {
-                // Generate Attachment Links
-                const attachmentLinks = t.ticket_attachments && t.ticket_attachments.length > 0
-                    ? t.ticket_attachments.map((file: any) =>
-                        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/warranty-files/${file.file_url}`
-                    ).join(" | ")
-                    : "Sem anexos"
+                // One URL per cell, padded with empty strings up to maxAttachments
+                const attachmentCells = Array.from({ length: maxAttachments }, (_, i) => {
+                    const file = t.ticket_attachments?.[i]
+                    return file ? `${baseUrl}${file.file_url}` : ""
+                })
 
                 return [
-                    t.id,
                     t.ticket_number,
                     new Date(t.created_at).toLocaleString('pt-BR'),
                     t.profiles?.full_name || "N/A",
@@ -59,7 +66,7 @@ export function ExportButton({ tickets }: ExportButtonProps) {
                     t.status,
                     t.solution || "",
                     t.closed_at ? new Date(t.closed_at).toLocaleString('pt-BR') : "",
-                    attachmentLinks
+                    ...attachmentCells
                 ]
             })
 
