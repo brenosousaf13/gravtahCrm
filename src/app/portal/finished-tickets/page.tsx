@@ -15,12 +15,12 @@ export default async function PortalFinishedTicketsPage() {
         return <div>Non-authenticated</div>
     }
 
-    // 2. Fetch Finished Tickets only
+    // 2. Fetch Finished and Abandoned Tickets
     const { data: tickets } = await supabase
         .from("tickets")
         .select("*")
         .eq("user_id", user.id)
-        .eq("status", "finalizado")
+        .in("status", ["finalizado", "abandonado"])
         .order("updated_at", { ascending: false })
 
     return (

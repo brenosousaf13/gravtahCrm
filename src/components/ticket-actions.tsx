@@ -71,6 +71,7 @@ export function TicketActions({ ticketId, currentStatus, currentSolution }: Tick
                         <SelectItem value="aprovado">Aprovado</SelectItem>
                         <SelectItem value="negado">Negado</SelectItem>
                         <SelectItem value="finalizado">Finalizado</SelectItem>
+                        <SelectItem value="abandonado">Abandonado</SelectItem>
                     </SelectContent>
                 </Select>
             </div>

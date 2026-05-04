@@ -28,7 +28,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
-import Link from "next/link"
 import { Eye, Search, ChevronLeft, ChevronRight, Trash2, Pencil } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
@@ -228,6 +227,7 @@ export function TicketsDataTable({ tickets }: TicketsDataTableProps) {
                             <SelectItem value="aprovado">Aprovados</SelectItem>
                             <SelectItem value="negado">Negados</SelectItem>
                             <SelectItem value="finalizado">Finalizados</SelectItem>
+                            <SelectItem value="abandonado">Abandonados</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>

@@ -5,7 +5,7 @@ import { TicketsDataTable } from "@/components/admin/tickets-data-table"
 export default async function AdminFinishedTicketsPage() {
     const supabase = await createClient()
 
-    // Fetch only finished tickets
+    // Fetch finished and abandoned tickets
     const { data: tickets, error } = await supabase
         .from("tickets")
         .select(`
@@ -17,7 +17,7 @@ export default async function AdminFinishedTicketsPage() {
                 document
             )
         `)
-        .eq("status", "finalizado")
+        .in("status", ["finalizado", "abandonado"])
         .order("updated_at", { ascending: false })
 
     if (error) {
@@ -30,10 +30,10 @@ export default async function AdminFinishedTicketsPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-black uppercase tracking-tight text-[#0C0C0C]">
-                        Tickets Finalizados
+                        Tickets Arquivados
                     </h1>
                     <p className="text-zinc-500">
-                        Histórico de todas as solicitações de garantia já concluídas.
+                        Histórico de solicitações finalizadas ou abandonadas.
                     </p>
                 </div>
                 <ExportButton tickets={tickets || []} />

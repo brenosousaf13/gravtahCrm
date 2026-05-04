@@ -1,12 +1,15 @@
 import { createClient } from "@/lib/supabase/server"
 import { ExportButton } from "@/components/admin/export-button"
 import { TicketsDataTable } from "@/components/admin/tickets-data-table"
+import { abandonStaleTickets } from "@/app/actions/ticket-actions"
 
 export default async function AdminTicketsPage() {
+    // Auto-abandon tickets with no activity for 30+ days before fetching
+    await abandonStaleTickets()
+
     const supabase = await createClient()
 
-    // Fetch all tickets for client-side filtering (MVP)
-    // Ordered by newest first
+    // Fetch all active tickets (excludes finalizado and abandonado)
     const { data: tickets, error } = await supabase
         .from("tickets")
         .select(`
@@ -19,6 +22,7 @@ export default async function AdminTicketsPage() {
             )
         `)
         .neq("status", "finalizado")
+        .neq("status", "abandonado")
         .order("updated_at", { ascending: false })
 
     if (error) {
