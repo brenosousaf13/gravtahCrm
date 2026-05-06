@@ -5,7 +5,8 @@ import { TicketsDataTable } from "@/components/admin/tickets-data-table"
 export default async function AdminFinishedTicketsPage() {
     const supabase = await createClient()
 
-    // Fetch finished and abandoned tickets
+    // Fetch archived tickets: everything that is NOT an active status
+    // Using NOT IN avoids referencing "abandonado" directly (enum safety)
     const { data: tickets, error } = await supabase
         .from("tickets")
         .select(`
@@ -17,7 +18,7 @@ export default async function AdminFinishedTicketsPage() {
                 document
             )
         `)
-        .in("status", ["finalizado", "abandonado"])
+        .not("status", "in", "(novo,em_analise,aguardando_resposta,aguardando_envio,aguardando_fabrica,aguardando_importacao,aprovado,negado)")
         .order("updated_at", { ascending: false })
 
     if (error) {

@@ -9,7 +9,7 @@ export default async function AdminTicketsPage() {
 
     const supabase = await createClient()
 
-    // Fetch all active tickets (excludes finalizado and abandonado)
+    // Fetch all active tickets (explicit IN excludes finalizado and abandonado without referencing enum values)
     const { data: tickets, error } = await supabase
         .from("tickets")
         .select(`
@@ -21,8 +21,7 @@ export default async function AdminTicketsPage() {
                 document
             )
         `)
-        .neq("status", "finalizado")
-        .neq("status", "abandonado")
+        .in("status", ["novo", "em_analise", "aguardando_resposta", "aguardando_envio", "aguardando_fabrica", "aguardando_importacao", "aprovado", "negado"])
         .order("updated_at", { ascending: false })
 
     if (error) {

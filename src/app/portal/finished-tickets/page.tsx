@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { TicketCard } from "@/components/ticket-card"
 import { Archive } from "lucide-react"
-import Link from "next/link"
 
 export default async function PortalFinishedTicketsPage() {
     const supabase = await createClient()
@@ -15,12 +14,12 @@ export default async function PortalFinishedTicketsPage() {
         return <div>Non-authenticated</div>
     }
 
-    // 2. Fetch Finished and Abandoned Tickets
+    // 2. Fetch archived tickets (NOT active statuses — enum-safe approach)
     const { data: tickets } = await supabase
         .from("tickets")
         .select("*")
         .eq("user_id", user.id)
-        .in("status", ["finalizado", "abandonado"])
+        .not("status", "in", "(novo,em_analise,aguardando_resposta,aguardando_envio,aguardando_fabrica,aguardando_importacao,aprovado,negado)")
         .order("updated_at", { ascending: false })
 
     return (
