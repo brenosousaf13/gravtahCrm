@@ -1,12 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { ExportButton } from "@/components/admin/export-button"
 import { TicketsDataTable } from "@/components/admin/tickets-data-table"
-import { abandonStaleTickets } from "@/app/actions/ticket-actions"
-
 export default async function AdminTicketsPage() {
-    // Auto-abandon tickets with no activity for 30+ days before fetching
-    await abandonStaleTickets()
-
     const supabase = await createClient()
 
     // Fetch all active tickets (explicit IN excludes finalizado and abandonado without referencing enum values)

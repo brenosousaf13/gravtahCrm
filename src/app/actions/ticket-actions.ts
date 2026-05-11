@@ -75,27 +75,6 @@ export async function sendMessage(ticketId: string, message: string) {
     return { success: true }
 }
 
-export async function abandonStaleTickets() {
-    const supabase = await createClient()
-
-    const thirtyDaysAgo = new Date()
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-
-    const { error } = await supabase
-        .from("tickets")
-        .update({
-            status: "abandonado",
-            updated_at: new Date().toISOString()
-        })
-        .lt("updated_at", thirtyDaysAgo.toISOString())
-        .neq("status", "finalizado")
-        .neq("status", "abandonado")
-
-    if (error) {
-        console.error("Error auto-abandoning stale tickets:", error)
-    }
-}
-
 export async function updateTicketStatus(ticketId: string, status: string, solution?: string | null) {
     const supabase = await createClient()
 
