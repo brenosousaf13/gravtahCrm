@@ -68,6 +68,7 @@ export function TicketActions({ ticketId, currentStatus, currentSolution }: Tick
                         <SelectItem value="em_analise">Em Análise</SelectItem>
                         <SelectItem value="aguardando_fabrica">Aguardando Fábrica</SelectItem>
                         <SelectItem value="aguardando_importacao">Aguardando Importação</SelectItem>
+                        <SelectItem value="aguardando_pagamento">Aguardando Pagamento</SelectItem>
                         <SelectItem value="aprovado">Aprovado</SelectItem>
                         <SelectItem value="negado">Negado</SelectItem>
                         <SelectItem value="finalizado">Finalizado</SelectItem>

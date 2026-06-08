@@ -16,7 +16,7 @@ export default async function AdminTicketsPage() {
                 document
             )
         `)
-        .in("status", ["novo", "em_analise", "aguardando_resposta", "aguardando_envio", "aguardando_fabrica", "aguardando_importacao", "aprovado", "negado"])
+        .in("status", ["novo", "em_analise", "aguardando_resposta", "aguardando_envio", "aguardando_fabrica", "aguardando_importacao", "aguardando_pagamento", "aprovado", "negado"])
         .order("updated_at", { ascending: false })
 
     if (error) {

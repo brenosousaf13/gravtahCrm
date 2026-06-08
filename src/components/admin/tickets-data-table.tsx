@@ -224,6 +224,7 @@ export function TicketsDataTable({ tickets }: TicketsDataTableProps) {
                             <SelectItem value="aguardando_envio">Aguardando Envio</SelectItem>
                             <SelectItem value="aguardando_fabrica">Aguardando Fábrica</SelectItem>
                             <SelectItem value="aguardando_importacao">Aguardando Importação</SelectItem>
+                            <SelectItem value="aguardando_pagamento">Aguardando Pagamento</SelectItem>
                             <SelectItem value="aprovado">Aprovados</SelectItem>
                             <SelectItem value="negado">Negados</SelectItem>
                             <SelectItem value="finalizado">Finalizados</SelectItem>
