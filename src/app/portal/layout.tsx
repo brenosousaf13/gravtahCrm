@@ -2,11 +2,11 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Ticket, LogOut, PlusCircle, User, Menu, X, Archive } from "lucide-react"
+import { LayoutDashboard, LogOut, PlusCircle, User, Menu, X, Archive } from "lucide-react"
 import { cn } from "@/lib/utils"
 // import { Header } from "@/components/layout/header" // Removed double header usage if present or integrate properly
 import { createClient } from "@/lib/supabase/client"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 
 export default function PortalLayout({
@@ -16,6 +16,27 @@ export default function PortalLayout({
 }) {
     const pathname = usePathname()
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+    const [canCreateTicket, setCanCreateTicket] = useState<boolean | null>(null)
+
+    useEffect(() => {
+        const supabase = createClient()
+        const loadTicketPermission = async () => {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) {
+                setCanCreateTicket(false)
+                return
+            }
+            const { data: profile } = await supabase
+                .from("profiles")
+                .select("role, is_ticket_creation_blocked")
+                .eq("id", user.id)
+                .single()
+            setCanCreateTicket(profile?.role === "admin" || profile?.is_ticket_creation_blocked === false)
+        }
+        void loadTicketPermission()
+        window.addEventListener("focus", loadTicketPermission)
+        return () => window.removeEventListener("focus", loadTicketPermission)
+    }, [])
 
     const navItems = [
         {
@@ -51,6 +72,8 @@ export default function PortalLayout({
         window.location.href = '/login'
     }
 
+    // Keep the existing shared navigation renderer; its closure carries the
+    // current route and the customer creation permission into both sidebars.
     const NavContent = () => (
         <>
             <div className="h-16 flex items-center px-6 border-b border-zinc-800 shrink-0">
@@ -60,7 +83,7 @@ export default function PortalLayout({
             </div>
 
             <nav className="flex-1 px-4 py-8 space-y-2 overflow-y-auto">
-                {navItems.map((item) => {
+                {navItems.filter((item) => !item.highlight || canCreateTicket === true).map((item) => {
                     const isActive = item.exact
                         ? pathname === item.href
                         : pathname.startsWith(item.href)
@@ -125,6 +148,7 @@ export default function PortalLayout({
                                 <X className="w-6 h-6" />
                             </Button>
                         </div>
+                        {/* eslint-disable-next-line react-hooks/static-components */}
                         <NavContent />
                     </aside>
                 </div>
@@ -132,6 +156,7 @@ export default function PortalLayout({
 
             {/* DESKTOP SIDEBAR */}
             <aside className="hidden md:flex w-64 bg-[#0C0C0C] text-zinc-400 flex-col fixed h-full inset-y-0 z-50">
+                {/* eslint-disable-next-line react-hooks/static-components */}
                 <NavContent />
             </aside>
 

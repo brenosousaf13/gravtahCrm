@@ -42,7 +42,15 @@ As permissões originais do banco, funções de recuperação administrativa de 
 
 ## Ativação no projeto Supabase
 
-Esta alteração foi preparada localmente. A migração ainda precisa ser aplicada no Supabase real e validada com as políticas e triggers existentes antes da publicação.
+As migrações foram aplicadas no Supabase do projeto CRM Gravata e verificadas em consulta somente leitura. Em outro ambiente, aplique-as seguindo a ordem abaixo antes de publicar.
+
+### Bloqueio de abertura por cliente
+
+A migração `supabase/migrations/202610260002_client_ticket_blocking.sql` acrescenta `profiles.is_ticket_creation_blocked`. O administrador pode ativar o bloqueio em **Clientes → Bloquear cliente** e liberar manualmente em **Desbloquear cliente**. A flag não depende do status do último ticket e não altera tickets existentes.
+
+O cliente bloqueado não vê os atalhos para abrir tickets e recebe uma mensagem explicativa. A página de abertura também é protegida no servidor. Uma aba antiga ou uma chamada direta ao Supabase recebe erro no trigger antes de criar a linha.
+
+Execute primeiro `202610260001_ticket_blocking.sql` (caso ainda não tenha executado) e depois `202610260002_client_ticket_blocking.sql`. A segunda migração é reaplicável.
 
 1. Em um ambiente de homologação do projeto, abra o SQL Editor do Supabase.
 2. Execute o arquivo `supabase/migrations/202610260001_ticket_blocking.sql` com o papel administrativo do banco. A migração é transacional e pode ser reaplicada.

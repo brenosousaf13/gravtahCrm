@@ -1,8 +1,14 @@
 import { createClient } from "@/lib/supabase/server"
 import { CustomersDataTable } from "@/components/admin/customers-data-table"
+import { redirect } from "next/navigation"
 
 export default async function AdminCustomersPage() {
     const supabase = await createClient()
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) redirect("/login")
+    const { data: actor } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+    if (actor?.role !== "admin") redirect("/portal/dashboard")
 
     // 1. Fetch Profiles (Clients)
     const { data: profiles, error: profilesError } = await supabase

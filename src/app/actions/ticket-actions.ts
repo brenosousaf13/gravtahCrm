@@ -126,6 +126,35 @@ export async function setTicketBlocked(ticketId: string, blocked: boolean) {
     return { success: true }
 }
 
+export async function setCustomerTicketCreationBlocked(customerId: string, blocked: boolean) {
+    if (typeof customerId !== "string" || !customerId || typeof blocked !== "boolean") {
+        throw new Error("Dados de bloqueio inválidos.")
+    }
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error("Sua sessão expirou. Faça login novamente.")
+
+    const { data: actor, error: actorError } = await supabase
+        .from("profiles").select("role").eq("id", user.id).single()
+    if (actorError || actor?.role !== "admin") {
+        throw new Error("Somente administradores podem bloquear ou desbloquear clientes.")
+    }
+
+    const { data: customer, error } = await supabase
+        .from("profiles")
+        .update({ is_ticket_creation_blocked: blocked })
+        .eq("id", customerId)
+        .eq("role", "cliente")
+        .select("id")
+        .single()
+    if (error || !customer) throw new Error("Não foi possível alterar o bloqueio do cliente.")
+
+    revalidatePath("/admin/customers")
+    revalidatePath("/portal/dashboard")
+    revalidatePath("/portal/tickets/new")
+    return { success: true }
+}
+
 export async function updateTicketStatus(ticketId: string, status: string, solution?: string | null) {
     const supabase = await createClient()
 

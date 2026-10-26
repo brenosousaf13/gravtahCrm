@@ -19,6 +19,7 @@ import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { Search, Pencil } from "lucide-react"
 import { EditCustomerDialog } from "./edit-customer-dialog"
+import { CustomerTicketBlockButton } from "./customer-ticket-block-button"
 
 interface Profile {
     id: string
@@ -29,6 +30,7 @@ interface Profile {
     avatar_url: string | null
     created_at: string
     role?: string
+    is_ticket_creation_blocked: boolean
 }
 
 interface CustomersDataTableProps {
@@ -114,6 +116,11 @@ export function CustomersDataTable({ profiles, ticketCounts }: CustomersDataTabl
                                                     <Badge variant="outline" className="w-fit text-[10px] h-5 mt-1 border-zinc-300 text-zinc-500">
                                                         CLIENTE
                                                     </Badge>
+                                                    {profile.is_ticket_creation_blocked && (
+                                                        <Badge variant="outline" className="w-fit mt-1 border-zinc-300 bg-zinc-100 text-zinc-700 text-[10px]">
+                                                            Novos tickets bloqueados
+                                                        </Badge>
+                                                    )}
                                                 </div>
                                             </div>
                                         </TableCell>
@@ -140,6 +147,8 @@ export function CustomersDataTable({ profiles, ticketCounts }: CustomersDataTabl
                                             }
                                         </TableCell>
                                         <TableCell className="text-right">
+                                            <div className="flex items-center justify-end gap-2">
+                                            <CustomerTicketBlockButton customerId={profile.id} customerName={profile.full_name} isBlocked={profile.is_ticket_creation_blocked} />
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
@@ -149,6 +158,7 @@ export function CustomersDataTable({ profiles, ticketCounts }: CustomersDataTabl
                                                 <Pencil className="h-4 w-4 text-zinc-500" />
                                                 <span className="sr-only">Editar</span>
                                             </Button>
+                                            </div>
                                         </TableCell>
                                     </TableRow>
                                 )

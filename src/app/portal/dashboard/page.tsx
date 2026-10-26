@@ -3,6 +3,7 @@ import { TicketCard } from "@/components/ticket-card"
 import { PackageOpen, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { CustomerCreationBlockedNotice } from "@/components/ticket/customer-creation-blocked-notice"
 
 export default async function PortalDashboard() {
     const supabase = await createClient()
@@ -15,6 +16,10 @@ export default async function PortalDashboard() {
     if (!user) {
         return <div>Non-authenticated</div>
     }
+
+    const { data: profile } = await supabase
+        .from("profiles").select("role, is_ticket_creation_blocked").eq("id", user.id).single()
+    const canCreateTicket = profile?.role === "admin" || (profile?.role === "cliente" && profile.is_ticket_creation_blocked === false)
 
     // 2. Fetch Tickets
     const { data: tickets } = await supabase
@@ -32,12 +37,15 @@ export default async function PortalDashboard() {
                         Meus Chamados
                     </h1>
                 </div>
-                <Link href="/portal/tickets/new">
+                {canCreateTicket && <Link href="/portal/tickets/new">
                     <Button className="bg-[#0C0C0C] hover:bg-zinc-800 text-white gap-2 uppercase font-bold tracking-wide">
                         <Plus className="w-4 h-4" /> Novo Ticket
                     </Button>
-                </Link>
+                </Link>}
             </div>
+
+            {profile?.is_ticket_creation_blocked && profile.role !== "admin" && <CustomerCreationBlockedNotice />}
+            {!profile && <p role="alert" className="text-sm text-zinc-700">Não foi possível verificar a permissão para abrir tickets. Atualize a página para tentar novamente.</p>}
 
             {!tickets || tickets.length === 0 ? (
                 <div className="flex flex-col items-center justify-center p-12 border-2 border-dashed border-zinc-200 rounded-lg bg-zinc-50/50 min-h-[400px]">
@@ -50,11 +58,11 @@ export default async function PortalDashboard() {
                     <p className="text-zinc-500 text-sm max-w-sm text-center mb-6">
                         Você ainda não abriu nenhuma solicitação de garantia.
                     </p>
-                    <Link href="/portal/tickets/new">
+                    {canCreateTicket && <Link href="/portal/tickets/new">
                         <Button className="bg-[#0C0C0C] hover:bg-zinc-800 text-white">
                             Abrir meu primeiro ticket
                         </Button>
-                    </Link>
+                    </Link>}
                 </div>
             ) : (
                 <div className="grid gap-4 grid-cols-1 md:grid-cols-3 auto-rows-fr">
