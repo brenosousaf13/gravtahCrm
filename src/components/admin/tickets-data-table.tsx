@@ -19,7 +19,9 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { Badge, type BadgeProps } from "@/components/ui/badge"
+import { TicketBlockedBadge } from "@/components/ticket/ticket-blocked-badge"
+import { TicketBlockButton } from "@/components/ticket/ticket-block-button"
 import {
     Dialog,
     DialogContent,
@@ -38,6 +40,7 @@ interface Ticket {
     ticket_number: number
     created_at: string
     status: string
+    is_blocked: boolean
     product_name: string
     brand: string
     model: string
@@ -280,10 +283,11 @@ export function TicketsDataTable({ tickets }: TicketsDataTableProps) {
                                         {new Date(ticket.created_at).toLocaleDateString('pt-BR')}
                                     </TableCell>
                                     <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            <Badge variant={ticket.status as any} className="uppercase text-[10px]">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <Badge variant={ticket.status as BadgeProps["variant"]} className="uppercase text-[10px]">
                                                 {ticket.status.replace(/_/g, " ")}
                                             </Badge>
+                                            {ticket.is_blocked && <TicketBlockedBadge />}
                                             {ticket.has_admin_unread && (
                                                 <span className="relative flex h-2 w-2">
                                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
@@ -294,6 +298,7 @@ export function TicketsDataTable({ tickets }: TicketsDataTableProps) {
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                                            <TicketBlockButton ticketId={ticket.id} isBlocked={ticket.is_blocked} compact />
                                             <Button
                                                 variant="ghost"
                                                 size="sm"

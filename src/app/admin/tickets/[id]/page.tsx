@@ -1,10 +1,13 @@
 import { createClient } from "@/lib/supabase/server"
 import { notFound, redirect } from "next/navigation"
-import { Badge } from "@/components/ui/badge"
+import { Badge, type BadgeProps } from "@/components/ui/badge"
+import { TicketBlockButton } from "@/components/ticket/ticket-block-button"
+import { TicketBlockedBadge } from "@/components/ticket/ticket-blocked-badge"
+import { TicketRealtime } from "@/components/ticket/ticket-realtime"
 import { TicketChat } from "@/components/ticket/ticket-chat"
 import { TicketActions } from "@/components/ticket-actions"
 import { TicketAttachments } from "@/components/ticket/ticket-attachments"
-import { FileText, Box, User, Calendar, AlertTriangle } from "lucide-react"
+import { Box, User, Calendar, AlertTriangle } from "lucide-react"
 import { BackButton } from "@/components/ui/back-button"
 
 interface PageProps {
@@ -17,6 +20,9 @@ export default async function AdminTicketPage(props: PageProps) {
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) redirect("/login")
+
+    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+    if (profile?.role !== "admin") redirect("/portal/dashboard")
 
     // Fetch Ticket
     const { data: ticket, error } = await supabase
@@ -43,6 +49,7 @@ export default async function AdminTicketPage(props: PageProps) {
 
     return (
         <div className="flex flex-col fixed inset-0 z-40 bg-white md:pl-64">
+            <TicketRealtime ticketId={ticket.id} />
             {/* 1. HEADER (Sticky Top) */}
             <header className="h-16 border-b border-zinc-200 bg-white px-6 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-4">
@@ -51,12 +58,14 @@ export default async function AdminTicketPage(props: PageProps) {
                     <h1 className="font-black text-lg uppercase tracking-tight">
                         Ticket #{ticket.ticket_number}
                     </h1>
-                    <Badge variant={ticket.status as any} className="uppercase text-[10px] tracking-wide">
+                    <Badge variant={ticket.status as BadgeProps["variant"]} className="uppercase text-[10px] tracking-wide">
                         {ticket.status.replace(/_/g, " ")}
                     </Badge>
+                    {ticket.is_blocked && <TicketBlockedBadge />}
                 </div>
 
                 <div className="flex items-center gap-6 text-xs font-medium text-zinc-500">
+                    <TicketBlockButton ticketId={ticket.id} isBlocked={ticket.is_blocked} />
                     <div className="flex items-center gap-2">
                         <User className="w-4 h-4 text-zinc-400" />
                         <span className="uppercase">{ticket.profiles?.full_name}</span>
@@ -78,6 +87,7 @@ export default async function AdminTicketPage(props: PageProps) {
                         initialMessages={messages || []}
                         currentUserId={user.id}
                         currentUserRole="admin"
+                        isBlocked={ticket.is_blocked}
                     />
                 </main>
 

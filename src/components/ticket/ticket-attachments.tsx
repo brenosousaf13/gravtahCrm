@@ -6,9 +6,15 @@ import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 
+export interface TicketAttachment {
+    id: string
+    file_url: string
+    file_type: string | null
+}
+
 interface TicketAttachmentsProps {
     ticketId: string
-    attachments: any[]
+    attachments: TicketAttachment[]
     userId: string
     readOnly?: boolean
 }
@@ -22,6 +28,7 @@ export function TicketAttachments({ ticketId, attachments, userId, readOnly = fa
 
     const handleRemoveAttachment = async (e: React.MouseEvent, attachmentId: string, fileUrl: string) => {
         e.preventDefault()
+        if (readOnly) return
         if (!confirm("Tem certeza que deseja remover este anexo? Essa ação não pode ser desfeita.")) return
 
         setIsDeleting(attachmentId)
@@ -55,7 +62,7 @@ export function TicketAttachments({ ticketId, attachments, userId, readOnly = fa
     }
 
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (!e.target.files?.length) return
+        if (readOnly || !e.target.files?.length) return
 
         setIsUploading(true)
         const supabase = createClient()
@@ -134,7 +141,7 @@ export function TicketAttachments({ ticketId, attachments, userId, readOnly = fa
 
             {attachments && attachments.length > 0 ? (
                 <div className="grid grid-cols-3 gap-2">
-                    {attachments.map((file: any) => {
+                    {attachments.map((file) => {
                         const publicUrl = getPublicUrl(file.file_url)
                         const isImage = file.file_type?.startsWith('image/')
 

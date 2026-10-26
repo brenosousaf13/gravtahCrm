@@ -4,10 +4,11 @@ import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { User, ShieldAlert } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import { sendMessage } from "@/app/actions/ticket-actions"
 
 interface Message {
     id: string
@@ -27,7 +28,7 @@ interface TicketChatProps {
     currentUserId: string
 }
 
-export function TicketChat({ ticketId, currentUserRole, currentUserId }: TicketChatProps) {
+export function TicketChat({ ticketId, currentUserId }: TicketChatProps) {
     const [messages, setMessages] = useState<Message[]>([])
     const [newMessage, setNewMessage] = useState("")
     const [loading, setLoading] = useState(false)
@@ -48,7 +49,7 @@ export function TicketChat({ ticketId, currentUserRole, currentUserId }: TicketC
                     table: "ticket_messages",
                     filter: `ticket_id=eq.${ticketId}`,
                 },
-                (payload) => {
+                () => {
                     fetchMessages() // Refresh to get profile data join
                 }
             )
@@ -78,31 +79,13 @@ export function TicketChat({ ticketId, currentUserRole, currentUserId }: TicketC
 
         setLoading(true)
         try {
-            // 1. Insert Message
-            const { error } = await supabase.from("ticket_messages").insert({
-                ticket_id: ticketId,
-                sender_id: currentUserId,
-                content: newMessage,
-            })
-
-            if (error) throw error
+            await sendMessage(ticketId, newMessage)
 
             setNewMessage("")
 
-            // 2. Update Ticket Status (Auto-Trigger)
-            // If Client sends -> em_analise (Reopened for review)
-            // If Admin sends -> aguardando_resposta (Waiting for customer)
-            // Only update if not already in that state to avoid noise, ideally handled by backend triggers but good for UI responsiveness
-            const targetStatus = currentUserRole === 'admin' ? 'aguardando_resposta' : 'em_analise'
-
-            await supabase
-                .from("tickets")
-                .update({ status: targetStatus, updated_at: new Date().toISOString() })
-                .eq("id", ticketId)
-
             router.refresh() // Refresh server components to show new status badge in parent
 
-        } catch (error: any) {
+        } catch (error) {
             console.error(error)
             toast.error("Erro ao enviar mensagem.")
         } finally {

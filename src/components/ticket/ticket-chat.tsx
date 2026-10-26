@@ -5,11 +5,12 @@ import { sendMessage } from "@/app/actions/ticket-actions"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
-import { Send, User, ShieldAlert, Loader2 } from "lucide-react"
+import { Send, LockKeyhole, Loader2 } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 
-interface Message {
+export interface Message {
     id: string
     content: string
     created_at: string
@@ -26,33 +27,31 @@ interface TicketChatProps {
     initialMessages: Message[]
     currentUserId: string
     currentUserRole?: string // Added to fix lint and potential usage
+    isBlocked?: boolean
 }
 
-export function TicketChat({ ticketId, initialMessages, currentUserId }: TicketChatProps) {
-    const [messages, setMessages] = useState<Message[]>(initialMessages)
+export function TicketChat({ ticketId, initialMessages: messages, currentUserRole, isBlocked = false }: TicketChatProps) {
     const [newMessage, setNewMessage] = useState("")
     const [loading, setLoading] = useState(false)
     const bottomRef = useRef<HTMLDivElement>(null)
+    const router = useRouter()
+    const readOnly = isBlocked && currentUserRole !== "admin"
 
     // Scroll to bottom on load and update
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" })
     }, [messages])
 
-    // Sync with initialMessages from server revalidation
-    useEffect(() => {
-        setMessages(initialMessages)
-    }, [initialMessages])
-
     const handleSend = async () => {
-        if (!newMessage.trim()) return
+        if (loading || readOnly || !newMessage.trim()) return
 
         setLoading(true)
         try {
             await sendMessage(ticketId, newMessage)
             setNewMessage("")
-        } catch (error) {
-            toast.error("Erro ao enviar mensagem")
+        } catch {
+            toast.error("Não foi possível enviar. Confira se o ticket está bloqueado e tente novamente.")
+            router.refresh()
         } finally {
             setLoading(false)
         }
@@ -80,14 +79,8 @@ export function TicketChat({ ticketId, initialMessages, currentUserId }: TicketC
 
                 {messages.map((msg) => {
                     const isAdminSender = msg.profiles?.role === 'admin'
-                    const isMe = msg.sender_id === currentUserId
-
                     return (
                         <div key={msg.id} className={`flex w-full ${isAdminSender ? 'justify-end' : 'justify-start'}`}>
-                            {/* Debug hidden */}
-                            <span className="hidden">
-                                {currentUserId} vs {msg.sender_id} | Role: {msg.profiles?.role}
-                            </span>
 
                             <div className={`flex flex-col max-w-[85%] md:max-w-[70%] ${isAdminSender ? 'items-end' : 'items-start'}`}>
                                 <div className="flex items-center gap-2 mb-1 px-1">
@@ -115,10 +108,21 @@ export function TicketChat({ ticketId, initialMessages, currentUserId }: TicketC
                 <div ref={bottomRef} className="pb-2" />
             </div>
 
+            {readOnly ? (
+                <div role="status" className="flex items-start gap-3 border-t border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-700 shrink-0">
+                    <LockKeyhole aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0" />
+                    <div>
+                        <p className="font-bold text-zinc-900">Este ticket está bloqueado</p>
+                        <p className="mt-1">O envio de mensagens e anexos foi desativado pela equipe. Você pode consultar o histórico deste atendimento.</p>
+                    </div>
+                </div>
+            ) : (
             <div className="p-4 bg-zinc-50 border-t border-zinc-200 shrink-0">
                 <div className="relative">
                     <Textarea
                         value={newMessage}
+                        aria-label="Mensagem para o atendimento"
+                        disabled={loading}
                         onChange={(e) => setNewMessage(e.target.value)}
                         placeholder="Digite sua resposta..."
                         className="pr-14 min-h-[50px] resize-none py-3 bg-white border-zinc-200 focus-visible:ring-zinc-900 focus-visible:ring-offset-0 shadow-sm"
@@ -133,12 +137,14 @@ export function TicketChat({ ticketId, initialMessages, currentUserId }: TicketC
                         size="icon"
                         className="absolute right-2 bottom-2 h-[42px] w-[42px] rounded-none bg-[#0C0C0C] hover:bg-zinc-800 transition-colors shadow-sm"
                         onClick={handleSend}
+                        aria-label="Enviar mensagem"
                         disabled={loading || !newMessage.trim()}
                     >
                         {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                     </Button>
                 </div>
             </div>
+            )}
         </div>
     )
 }

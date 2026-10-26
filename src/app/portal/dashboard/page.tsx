@@ -66,6 +66,7 @@ export default async function PortalDashboard() {
                                 productName={ticket.product_name}
                                 brand={ticket.brand}
                                 status={ticket.status}
+                                isBlocked={ticket.is_blocked}
                                 createdAt={ticket.created_at}
                             />
                         </div>

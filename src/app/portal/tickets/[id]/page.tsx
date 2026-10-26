@@ -18,6 +18,7 @@ export default async function ClientTicketPage(props: PageProps) {
         .from("tickets")
         .select("*, ticket_attachments(*)")
         .eq("id", id)
+        .eq("user_id", user.id)
         .single()
 
     if (error || !ticket) return notFound()

@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge"
 import { CalendarDays } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import { TicketBlockedBadge } from "@/components/ticket/ticket-blocked-badge"
 
 interface TicketCardProps {
     id: string
@@ -11,6 +12,7 @@ interface TicketCardProps {
     status: string
     createdAt: string
     brand: string
+    isBlocked?: boolean
 }
 
 export function TicketCard({
@@ -20,6 +22,7 @@ export function TicketCard({
     status,
     createdAt,
     brand,
+    isBlocked = false,
 }: TicketCardProps) {
     // Format date nicely
     const date = new Date(createdAt).toLocaleDateString("pt-BR", {
@@ -65,6 +68,7 @@ export function TicketCard({
                     </div>
 
                     <div className="mb-3">
+                        {isBlocked && <div className="mb-2"><TicketBlockedBadge /></div>}
                         <h3 className="font-bold text-base text-[#0C0C0C] uppercase leading-tight line-clamp-2 mb-0.5 group-hover:text-zinc-700 transition-colors">
                             {productName}
                         </h3>

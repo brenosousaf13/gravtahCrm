@@ -4,6 +4,9 @@ import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 
 export async function sendMessage(ticketId: string, message: string) {
+    if (typeof message !== "string" || !message.trim()) {
+        throw new Error("Digite uma mensagem antes de enviar.")
+    }
     const supabase = await createClient()
 
     const { data: { user } } = await supabase.auth.getUser()
@@ -13,36 +16,47 @@ export async function sendMessage(ticketId: string, message: string) {
     }
 
     // Get User Role
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("role")
         .eq("id", user.id)
         .single()
 
-    console.log('[sendMessage] User:', user.email, 'Role:', profile?.role)
+    if (profileError || !["admin", "cliente"].includes(profile?.role)) {
+        throw new Error("Não foi possível verificar sua permissão de acesso.")
+    }
 
     const isAdmin = profile?.role === 'admin'
+
+    const { data: currentTicket, error: ticketError } = await supabase
+        .from("tickets")
+        .select("user_id, status, is_blocked")
+        .eq("id", ticketId)
+        .single()
+
+    if (ticketError || !currentTicket) throw new Error("Ticket não encontrado.")
+    if (!isAdmin && currentTicket.user_id !== user.id) {
+        throw new Error("Você não tem permissão para acessar este ticket.")
+    }
+    if (!isAdmin && currentTicket.is_blocked) {
+        throw new Error("Este ticket está bloqueado para novas mensagens.")
+    }
 
     // 1. Insert Message
     const { error } = await supabase
         .from("ticket_messages")
         .insert({
             ticket_id: ticketId,
-            content: message,
+            content: message.trim(),
             sender_id: user.id
         })
 
     if (error) {
-        console.error("Error sending message:", error)
-        throw new Error("Failed to send message")
+        if (error.code === "42501") {
+            throw new Error("Não foi possível enviar. O ticket pode ter sido bloqueado ou sua permissão alterada.")
+        }
+        throw new Error("Não foi possível enviar a mensagem. Tente novamente.")
     }
-
-    // 2. Fetch current status to conditionally update
-    const { data: currentTicket } = await supabase
-        .from("tickets")
-        .select("status")
-        .eq("id", ticketId)
-        .single()
 
     let nextStatus = currentTicket?.status
 
@@ -71,6 +85,43 @@ export async function sendMessage(ticketId: string, message: string) {
     revalidatePath(`/portal/tickets/${ticketId}`)
     revalidatePath(`/admin/tickets/${ticketId}`)
     revalidatePath("/admin/tickets") // Update list view
+
+    return { success: true }
+}
+
+export async function setTicketBlocked(ticketId: string, blocked: boolean) {
+    if (typeof ticketId !== "string" || !ticketId || typeof blocked !== "boolean") {
+        throw new Error("Dados de bloqueio inválidos.")
+    }
+
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error("Sua sessão expirou. Faça login novamente.")
+
+    const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single()
+
+    if (profileError || profile?.role !== "admin") {
+        throw new Error("Somente administradores têm permissão para bloquear tickets.")
+    }
+
+    const { data: ticket, error } = await supabase
+        .from("tickets")
+        .update({ is_blocked: blocked, updated_at: new Date().toISOString() })
+        .eq("id", ticketId)
+        .select("id")
+        .single()
+
+    if (error || !ticket) throw new Error("Não foi possível alterar o bloqueio do ticket.")
+
+    for (const path of [
+        `/admin/tickets/${ticketId}`, `/portal/tickets/${ticketId}`,
+        "/admin/tickets", "/admin/finished-tickets", "/admin/dashboard",
+        "/portal/dashboard", "/portal/finished-tickets",
+    ]) revalidatePath(path)
 
     return { success: true }
 }
