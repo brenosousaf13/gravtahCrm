@@ -5,7 +5,12 @@ import { createServerClient } from '@supabase/ssr'
 export async function GET(request: Request) {
     const requestUrl = new URL(request.url)
     const code = requestUrl.searchParams.get('code')
-    const next = requestUrl.searchParams.get('next') ?? '/portal/dashboard'
+    const requestedNext = requestUrl.searchParams.get('next')
+    const next = requestedNext && ['/portal/dashboard', '/reset-password', '/admin/dashboard'].includes(requestedNext)
+        ? requestedNext : '/portal/dashboard'
+    const invalidLink = () => NextResponse.redirect(new URL('/auth/confirm-email?error=invalid_link', requestUrl.origin))
+
+    if (!code || requestUrl.searchParams.has('error')) return invalidLink()
 
     if (code) {
         const cookieStore = await cookies()
@@ -22,7 +27,7 @@ export async function GET(request: Request) {
                             cookiesToSet.forEach(({ name, value, options }) =>
                                 cookieStore.set({ name, value, ...options })
                             )
-                        } catch (error) {
+                        } catch {
                             // Ignore in route handler
                         }
                     },
@@ -31,7 +36,12 @@ export async function GET(request: Request) {
         )
 
         // Exchange the code for a session
-        await supabase.auth.exchangeCodeForSession(code)
+        try {
+            const { error } = await supabase.auth.exchangeCodeForSession(code)
+            if (error) return invalidLink()
+        } catch {
+            return invalidLink()
+        }
     }
 
     // Redirect to the intended page (e.g., /reset-password)

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
@@ -10,37 +10,30 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useForm } from "react-hook-form"
-import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
-
-// 1. Zod Schema
-const registerSchema = z.object({
-    full_name: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
-    document: z.string().min(11, "Documento inválido"), // Basic length check, refined by usage
-    phone: z.string().min(14, "Telefone inválido"), // (11) 99999-9999
-    email: z.string().email("Email inválido"),
-    password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
-    confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-    message: "As senhas não coincidem",
-    path: ["confirmPassword"],
-})
-
-type RegisterFormValues = z.infer<typeof registerSchema>
+import { EmailConfirmation } from "@/components/auth/email-confirmation"
+import { registrationSchema, registerCustomer, type RegistrationValues } from "@/lib/auth/registration"
+import { getAuthErrorMessage, isAuthRateLimit } from "@/lib/auth/errors"
+import { getEmailCooldownSeconds, startEmailCooldown, useEmailCooldown } from "@/lib/auth/email-cooldown"
 
 export default function RegisterPage() {
     const router = useRouter()
     const supabase = createClient()
     const [loading, setLoading] = useState(false)
+    const [pendingEmail, setPendingEmail] = useState("")
+    const [submitError, setSubmitError] = useState("")
+    const submitting = useRef(false)
+    const cooldown = useEmailCooldown()
 
     // React Hook Form
     const {
         register,
         handleSubmit,
         setValue,
+        setFocus,
         formState: { errors },
-    } = useForm<RegisterFormValues>({
-        resolver: zodResolver(registerSchema),
+    } = useForm<RegistrationValues>({
+        resolver: zodResolver(registrationSchema),
     })
 
     // --- MASKS ---
@@ -75,58 +68,37 @@ export default function RegisterPage() {
         setValue("phone", value)
     }
 
-    const onSubmit = async (data: RegisterFormValues) => {
+    const onSubmit = async (data: RegistrationValues) => {
+        if (submitting.current) return
+        if (getEmailCooldownSeconds() > 0) {
+            setSubmitError("Aguarde o intervalo indicado antes de tentar novamente.")
+            return
+        }
+        submitting.current = true
         setLoading(true)
+        setSubmitError("")
         try {
-            // 1. SignUp with Meta Data
-            const { data: authData, error: authError } = await supabase.auth.signUp({
-                email: data.email,
-                password: data.password,
-                options: {
-                    data: {
-                        full_name: data.full_name,
-                        document: data.document,
-                        phone: data.phone,
-                    },
-                },
-            })
-
-            if (authError) throw authError
-
-            // 2. Update Profile (Redundant but ensures sync if trigger fails/delays)
-            if (authData.user) {
-                const { error: profileError } = await supabase
-                    .from("profiles")
-                    .update({
-                        full_name: data.full_name,
-                        document: data.document,
-                        phone: data.phone,
-                    })
-                    .eq("id", authData.user.id)
-
-                if (profileError) {
-                    console.warn("Manual profile update failed (Trigger might have handled it):", profileError)
-                }
-            }
-
-            toast.success("Conta criada com sucesso!")
-
-            if (authData.session) {
+            startEmailCooldown()
+            const result = await registerCustomer(supabase.auth, data, window.location.origin)
+            if (!result.requiresConfirmation) {
+                toast.success("Conta criada com sucesso!")
                 router.push("/portal/dashboard")
             } else {
-                toast.info("Verifique seu email para confirmar o cadastro.")
-                router.push("/login")
+                setValue("password", "")
+                setValue("confirmPassword", "")
+                setPendingEmail(result.email)
             }
-        } catch (error: any) {
-            console.error(error)
-            toast.error(error.message || "Erro ao criar conta.")
+        } catch (error) {
+            if (isAuthRateLimit(error)) startEmailCooldown()
+            setSubmitError(getAuthErrorMessage(error, "Não foi possível criar a conta. Confira os dados e tente novamente."))
         } finally {
+            submitting.current = false
             setLoading(false)
         }
     }
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-zinc-100 p-4">
+        <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-zinc-100 px-4 py-8">
             <Card className="w-full max-w-md bg-white border-zinc-200 shadow-sm p-0 overflow-hidden">
                 <CardHeader className="bg-white border-b border-zinc-100 pb-6 pt-8 text-center">
                     <CardTitle className="text-3xl font-black tracking-tighter text-[#0C0C0C]">
@@ -136,8 +108,15 @@ export default function RegisterPage() {
                         Crie sua conta
                     </p>
                 </CardHeader>
-                <CardContent className="p-8">
+                <CardContent className="p-6 sm:p-8">
+                    {pendingEmail ? <EmailConfirmation email={pendingEmail} onCorrectEmail={() => {
+                        setPendingEmail("")
+                        setSubmitError("")
+                        setValue("confirmEmail", "")
+                        window.setTimeout(() => setFocus("email"), 0)
+                    }} /> : <>
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                        <fieldset disabled={loading} className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="full_name">Nome Completo</Label>
                             <Input
@@ -180,11 +159,21 @@ export default function RegisterPage() {
                             <Input
                                 id="email"
                                 type="email"
+                                autoComplete="email"
+                                autoCapitalize="none"
+                                spellCheck={false}
                                 placeholder="seu@email.com"
                                 {...register("email")}
                                 className="bg-zinc-50/50"
                             />
                             {errors.email && <p className="text-xs text-red-500">{errors.email.message}</p>}
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="confirmEmail">Confirmar e-mail</Label>
+                            <Input id="confirmEmail" type="email" autoComplete="off" autoCapitalize="none" spellCheck={false} placeholder="Digite seu e-mail novamente" {...register("confirmEmail")} className="bg-zinc-50/50" aria-invalid={!!errors.confirmEmail} aria-describedby={errors.confirmEmail ? "confirm-email-error" : undefined} />
+                            {errors.confirmEmail && <p id="confirm-email-error" className="text-xs text-red-700">{errors.confirmEmail.message}</p>}
+                            <p className="text-xs text-zinc-600">O link para ativar sua conta será enviado para esse endereço.</p>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
@@ -193,6 +182,7 @@ export default function RegisterPage() {
                                 <Input
                                     id="password"
                                     type="password"
+                                    autoComplete="new-password"
                                     placeholder="••••••"
                                     {...register("password")}
                                     className="bg-zinc-50/50"
@@ -204,6 +194,7 @@ export default function RegisterPage() {
                                 <Input
                                     id="confirmPassword"
                                     type="password"
+                                    autoComplete="new-password"
                                     placeholder="••••••"
                                     {...register("confirmPassword")}
                                     className="bg-zinc-50/50"
@@ -212,14 +203,18 @@ export default function RegisterPage() {
                             </div>
                         </div>
 
+                        {submitError && <p role="alert" className="text-sm text-red-700">{submitError}</p>}
                         <Button
                             type="submit"
                             className="w-full h-12 text-sm mt-4"
-                            disabled={loading}
+                            disabled={loading || cooldown > 0}
                         >
-                            {loading ? "Criando conta..." : "CADASTRAR"}
+                            {loading ? "Criando conta..." : cooldown > 0 ? `Aguarde ${cooldown}s` : "CADASTRAR"}
                         </Button>
+                        </fieldset>
                     </form>
+
+                    <Link href="/auth/confirm-email" className="mt-4 block text-center text-sm underline underline-offset-4">Não recebeu o e-mail de confirmação?</Link>
 
                     <div className="mt-8 text-center text-sm">
                         <span className="text-zinc-500">Já tem conta? </span>
@@ -230,10 +225,11 @@ export default function RegisterPage() {
                             Fazer Login
                         </Link>
                     </div>
+                    </>}
                 </CardContent>
             </Card>
 
-            <div className="absolute bottom-6 text-center text-xs text-zinc-400 uppercase font-medium">
+            <div className="text-center text-xs text-zinc-500 uppercase font-medium">
                 &copy; {new Date().getFullYear()} Gravtah Performance
             </div>
         </div>

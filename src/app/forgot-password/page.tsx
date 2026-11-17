@@ -10,6 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Loader2 } from "lucide-react";
+import { getAuthErrorMessage } from "@/lib/auth/errors";
+import { normalizedEmailSchema } from "@/lib/auth/registration";
+import { getEmailCooldownSeconds, startEmailCooldown, useEmailCooldown } from "@/lib/auth/email-cooldown";
 
 export default function ForgotPasswordPage() {
     const router = useRouter();
@@ -17,17 +20,25 @@ export default function ForgotPasswordPage() {
     const [loading, setLoading] = useState(false);
     const [email, setEmail] = useState("");
     const [isSent, setIsSent] = useState(false);
+    const [resetError, setResetError] = useState("");
+    const cooldown = useEmailCooldown();
 
     const handleReset = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!email) return;
+        if (!email || loading) return;
+        if (getEmailCooldownSeconds() > 0) {
+            setResetError("Aguarde o intervalo indicado antes de solicitar outro e-mail.");
+            return;
+        }
 
         setLoading(true);
+        setResetError("");
 
         try {
+            const address = normalizedEmailSchema.parse(email);
             // 1. Check if email exists using RPC (bypasses RLS)
             const { data: exists, error: rpcError } = await supabase.rpc("check_email_exists", {
-                lookup_email: email,
+                lookup_email: address,
             });
 
             if (rpcError || !exists) {
@@ -36,7 +47,8 @@ export default function ForgotPasswordPage() {
             }
 
             // 2. Send reset email via Supabase Auth
-            const { error: authError } = await supabase.auth.resetPasswordForEmail(email, {
+            startEmailCooldown();
+            const { error: authError } = await supabase.auth.resetPasswordForEmail(address, {
                 redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
             });
 
@@ -46,9 +58,8 @@ export default function ForgotPasswordPage() {
 
             toast.success("E-mail de redefinição enviado com sucesso!");
             setIsSent(true);
-        } catch (error: any) {
-            console.error(error);
-            toast.error(error.message || "Erro ao tentar enviar e-mail de redefinição.");
+        } catch (error) {
+            setResetError(getAuthErrorMessage(error, "Não foi possível solicitar a recuperação. Confira o e-mail e tente novamente."));
         } finally {
             setLoading(false);
         }
@@ -107,10 +118,11 @@ export default function ForgotPasswordPage() {
                                 />
                             </div>
 
+                            {resetError && <p role="alert" className="text-sm text-red-700">{resetError}</p>}
                             <Button
                                 type="submit"
                                 className="w-full h-12 text-sm bg-[#0C0C0C] hover:bg-zinc-800 text-white"
-                                disabled={loading}
+                                disabled={loading || cooldown > 0}
                             >
                                 {loading ? (
                                     <>
@@ -118,7 +130,7 @@ export default function ForgotPasswordPage() {
                                         Enviando...
                                     </>
                                 ) : (
-                                    "Enviar Link de Recuperação"
+                                    cooldown > 0 ? `Aguarde ${cooldown}s` : "Enviar Link de Recuperação"
                                 )}
                             </Button>
                         </form>

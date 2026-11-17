@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getAuthErrorMessage } from "@/lib/auth/errors";
+import { normalizedEmailSchema } from "@/lib/auth/registration";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -16,15 +18,18 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [loginError, setLoginError] = useState("");
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (loading) return;
         setLoading(true);
+        setLoginError("");
 
         try {
             const { data: authData, error: authError } =
                 await supabase.auth.signInWithPassword({
-                    email,
+                    email: normalizedEmailSchema.parse(email),
                     password,
                 });
 
@@ -54,9 +59,8 @@ export default function LoginPage() {
             } else {
                 router.push("/portal/dashboard");
             }
-        } catch (error: any) {
-            console.error(error);
-            toast.error(error.message || "Erro ao realizar login.");
+        } catch (error) {
+            setLoginError(getAuthErrorMessage(error, "Não foi possível entrar. Confira os dados e tente novamente."));
         } finally {
             setLoading(false);
         }
@@ -80,6 +84,9 @@ export default function LoginPage() {
                             <Input
                                 id="email"
                                 type="email"
+                                autoComplete="email"
+                                autoCapitalize="none"
+                                spellCheck={false}
                                 placeholder="seu@email.com"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
@@ -100,6 +107,7 @@ export default function LoginPage() {
                             <Input
                                 id="password"
                                 type="password"
+                                autoComplete="current-password"
                                 placeholder="••••••••"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
@@ -108,6 +116,7 @@ export default function LoginPage() {
                             />
                         </div>
 
+                        {loginError && <p role="alert" className="text-sm text-red-700">{loginError}</p>}
                         <Button
                             type="submit"
                             className="w-full h-12 text-sm"
@@ -116,6 +125,8 @@ export default function LoginPage() {
                             {loading ? "Entrando..." : "Entrar"}
                         </Button>
                     </form>
+
+                    <Link href="/auth/confirm-email" className="mt-4 block text-center text-sm underline underline-offset-4">Não recebeu a confirmação? Reenviar e-mail</Link>
 
                     <div className="mt-8 text-center text-sm">
                         <span className="text-zinc-500">Não tem conta? </span>
